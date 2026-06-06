@@ -195,7 +195,61 @@ export async function GET() {
       });
     }
 
-    // 4. Create products
+    // 4. Create communes for main wilayas
+    const COMMUNES_BY_WILAYA: Record<number, string[]> = {
+      1: ["Adrar", "Tamest", "Reggane", "In Zghmir", "Tsabit", "Fenoughil", "Zaouiet Kounta"],
+      2: ["Chlef", "Ténès", "El Karimia", "Oued Fodda", "El Marsa", "Boukadir", "Ouled Fares"],
+      3: ["Laghouat", "Aflou", "Ksar El Hirane", "Hassi R'Mel", "Brida", "El Ghicha"],
+      5: ["Batna", "Barika", "Ain Touta", "N'Gaous", "Merouana", "Tazoult", "Seggana"],
+      6: ["Béjaïa", "Akbou", "Sidi Aich", "Amizour", "El Kseur", "Kherrata", "Tichy", "Aokas", "Seddouk"],
+      7: ["Biskra", "Tolga", "Ouled Djellal", "Sidi Okba", "M'Chounèche", "El Kantara", "Djemorah"],
+      9: ["Blida", "Boufarik", "Bougara", "Mouzaia", "El Affroun", "Ouled Yaïch", "Chréa", "Beni Mered"],
+      10: ["Bouira", "Lakhdaria", "Sour El Ghozlane", "M'Chedallah", "Ain Bessem", "El Hachimia", "Kadiria"],
+      13: ["Tlemcen", "Maghnia", "Ghazaouet", "Remchi", "Nedroma", "Sebdou", "Beni Saf", "Hennaya"],
+      14: ["Tiaret", "Frenda", "Ksar Chellala", "Sougueur", "Mahdia", "Ain Deheb"],
+      15: ["Tizi Ouzou", "Azazga", "Draa Ben Khedda", "Draa El Mizan", "Larbaa Nath Irathen", "Ain El Hammam", "Ouaguenoun", "Tigzirt", "Azzefoun", "Boghni", "Mekla", "Ouadhias", "Ait Toudert"],
+      16: ["Alger Centre", "Sidi M'Hamed", "El Madania", "Belouizdad", "Bab El Oued", "Bologhine", "Casbah", "Hussein Dey", "Kouba", "Bachdjerrah", "El Harrach", "Baraki", "Bir Mourad Raïs", "El Biar", "Bouzareah", "Birkhadem", "El Mouradia", "Hydra", "Ben Aknoun", "Dely Ibrahim", "Bab Ezzouar", "Dar El Beida", "Rouiba", "Ain Taya", "Bordj El Kiffan", "El Mohammadia", "Mohammadia", "Reghaia", "Ain Benian", "Staoueli", "Zeralda", "Cheraga", "Ouled Fayet", "El Achour", "Draria", "Douera", "Baba Hassen", "Khraicia", "Saoula"],
+      17: ["Djelfa", "Ain Oussera", "Messaad", "Hassi Bahbah", "Charef", "Djelfa", "Moudjbara"],
+      18: ["Jijel", "El Milia", "Taher", "Chekfa", "Sidi Marouf", "Texenna", "Ziama Mansouriah", "El Ancer"],
+      19: ["Sétif", "El Eulma", "Ain Arnat", "Ain Oulmene", "Bougaa", "Ain El Kebira", "Guenzet", "Beni Aziz", "Amoucha", "Ain Azel"],
+      21: ["Skikda", "Azzaba", "Ain Kechra", "El Harrouch", "Ramdane Djamel", "Collo", "El Hadaiek", "Salah Bouchaour", "Zitouna"],
+      23: ["Annaba", "El Bouni", "El Hadjar", "Berrahal", "Ain El Berda", "Seraidi", "Chetaibi", "Oued El Aneb"],
+      25: ["Constantine", "El Khroub", "Ain Smara", "Hamma Bouziane", "Didouche Mourad", "Zighoud Youcef", "Ain Abid", "Ibn Ziad"],
+      27: ["Mostaganem", "Ain Tedles", "Sidi Ali", "Ain Nouissy", "Hassi Maameche", "Bouguirat", "Kheir Eddine", "Mazagran"],
+      29: ["Mascara", "Sig", "Ain Fares", "Tighennif", "Mohammadia", "Bou Hanifia", "El Bordj", "Oued Taria"],
+      31: ["Oran", "Bir El Djir", "Es Senia", "Ain Turk", "Arzew", "Bethioua", "Hassi Bounif", "Oued Tlelat", "Ain El Kerma", "Mers El Kébir", "Bousfer", "El Braya", "Hassi Mefsoukh"],
+      34: ["Bordj Bou Arréridj", "Ras El Oued", "Bir Kasdali", "Mansourah", "El Achir", "Djaâfra", "Medjana", "El Hamadia"],
+      35: ["Boumerdès", "Boudouaou", "Dellys", "Khemis El Khechna", "Bordj Menaiel", "Naciria", "Tidjelabine", "Hammadi", "Ouled Moussa", "Bouzegza Keddara", "Corso", "Isser"],
+      36: ["El Tarf", "El Kala", "Bouhadjar", "Ben M'Hidi", "Besbes", "Dréan", "Ain El Assel", "Bouteldja", "Zerizer"],
+      39: ["El Oued", "Guemar", "Robbah", "Debila", "Hassani Abdelkrim", "Kouinine", "Magrane", "Oum Touyour", "Bayadha"],
+      42: ["Tipaza", "Koléa", "Hadjout", "Cherchell", "Bou Ismaïl", "Sidi Amar", "Fouka", "Ahmer El Ain", "Gouraya", "Chaïba", "Damous", "Larhat"],
+      43: ["Mila", "Ferdjioua", "Chelghoum Laïd", "Grarem Gouga", "Oued Athmenia", "Rouached", "Ain Beida Harriche", "Teleghma", "Tassadane Haddada"],
+      44: ["Ain Defla", "Khemis Miliana", "Miliana", "El Attaf", "Djelida", "Hammam Righa", "Rouina", "Bourached", "El Abadia", "Ain Lechiakh"],
+      47: ["Ghardaïa", "Metlili", "El Guerrara", "Berriane", "Dhayet Bendhahoua", "Zelfana", "Bounoura", "El Atteuf", "Mansoura"],
+      48: ["Relizane", "Oued Rhiou", "Mazouna", "Yellel", "Ain Tarek", "Mendes", "Djidiouia", "Ramka", "Sidi M'Hamed Ben Ali", "Ammi Moussa"],
+    };
+
+    for (const [code, communeNames] of Object.entries(COMMUNES_BY_WILAYA)) {
+      const wilaya = await db.wilaya.findFirst({ where: { code: parseInt(code) } });
+      if (wilaya) {
+        const flatNames = communeNames.flat() as string[];
+        for (let idx = 0; idx < flatNames.length; idx++) {
+          const cName = flatNames[idx];
+          await db.commune.upsert({
+            where: { id: `${wilaya.id}-${idx}` },
+            update: { name: cName },
+            create: {
+              id: `${wilaya.id}-${idx}`,
+              code: idx + 1,
+              name: cName,
+              wilayaId: wilaya.id,
+            },
+          });
+        }
+      }
+    }
+
+    // 5. Create products
     const createdProducts = [];
     for (let i = 0; i < 30; i++) {
       const reference = `RK-${String(i + 1).padStart(3, "0")}`;

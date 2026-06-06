@@ -6,9 +6,9 @@ import { getWilayas, getCommunes, calculateShipping } from "@/lib/ecotrack";
 
 /**
  * GET /api/ecotrack - Ecotrack API proxy
- * - No action param: Get ecotrack settings
- * - ?action=wilayas: Fetch wilayas from ecotrack
- * - ?action=communes&wilayaId=X: Fetch communes
+ * - No action param: Get ecotrack settings (admin)
+ * - ?action=wilayas: Fetch wilayas (Ecotrack API → fallback DB locale)
+ * - ?action=communes&wilayaId=X: Fetch communes (Ecotrack API → fallback DB locale)
  * - ?action=shipping&wilayaId=X: Calculate shipping
  */
 export async function GET(request: NextRequest) {
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         settings: {
           id: settings.id,
           apiUrl: settings.apiUrl,
-          apiToken: settings.apiToken ? "********" : null, // Don't expose full token
+          apiToken: settings.apiToken ? "********" : null,
           hasToken: !!settings.apiToken,
           active: settings.active,
         },
@@ -38,7 +38,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Public actions: wilayas, communes, shipping (needed for storefront)
-    // Admin-only actions: settings (no action param)
     const publicActions = ["wilayas", "communes", "shipping"];
 
     if (!publicActions.includes(action)) {
@@ -50,8 +49,22 @@ export async function GET(request: NextRequest) {
 
     switch (action) {
       case "wilayas": {
-        const wilayas = await getWilayas();
-        return NextResponse.json({ wilayas });
+        try {
+          const wilayas = await getWilayas();
+          return NextResponse.json({ wilayas });
+        } catch {
+          // Fallback: load wilayas from local database
+          const localWilayas = await db.wilaya.findMany({
+            orderBy: { code: "asc" },
+          });
+          return NextResponse.json({
+            wilayas: localWilayas.map((w) => ({
+              id: w.id,
+              code: w.code,
+              name: w.name,
+            })),
+          });
+        }
       }
 
       case "communes": {
@@ -62,8 +75,35 @@ export async function GET(request: NextRequest) {
             { status: 400 }
           );
         }
-        const communes = await getCommunes(parseInt(wilayaId));
-        return NextResponse.json({ communes });
+        try {
+          const communes = await getCommunes(parseInt(wilayaId));
+          return NextResponse.json({ communes });
+        } catch {
+          // Fallback: load communes from local database
+          // Try to find the wilaya first (wilayaId could be a code or a DB id)
+          let localWilaya = await db.wilaya.findFirst({
+            where: { code: parseInt(wilayaId) },
+          });
+          if (!localWilaya) {
+            localWilaya = await db.wilaya.findUnique({
+              where: { id: wilayaId },
+            });
+          }
+          if (!localWilaya) {
+            return NextResponse.json({ communes: [] });
+          }
+          const localCommunes = await db.commune.findMany({
+            where: { wilayaId: localWilaya.id },
+            orderBy: { name: "asc" },
+          });
+          return NextResponse.json({
+            communes: localCommunes.map((c) => ({
+              id: c.id,
+              code: c.code,
+              name: c.name,
+            })),
+          });
+        }
       }
 
       case "shipping": {
@@ -74,8 +114,19 @@ export async function GET(request: NextRequest) {
             { status: 400 }
           );
         }
-        const shipping = await calculateShipping(parseInt(wilayaId));
-        return NextResponse.json({ shipping });
+        try {
+          const shipping = await calculateShipping(parseInt(wilayaId));
+          return NextResponse.json({ shipping });
+        } catch {
+          // Fallback: return a default shipping cost based on wilaya code
+          const code = parseInt(wilayaId);
+          // Algérie: ~400 DA pour Alger, ~700 DA pour les autres wilayas
+          const defaultPrice = code === 16 ? 400 : 700;
+          return NextResponse.json({
+            shipping: { price: defaultPrice },
+            source: "fallback",
+          });
+        }
       }
 
       default:
