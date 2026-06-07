@@ -12,6 +12,11 @@ import {
   Phone,
   User,
   Loader2,
+  Send,
+  RefreshCw,
+  ExternalLink,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -110,6 +115,8 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [sendingToEcotrack, setSendingToEcotrack] = useState(false);
+  const [syncingEcotrack, setSyncingEcotrack] = useState(false);
 
   const fetchOrders = useCallback(async (page = 1) => {
     try {
@@ -163,7 +170,6 @@ export default function OrdersPage() {
       });
       if (res.ok) {
         toast.success('Statut de la commande mis à jour');
-        // Refresh the selected order
         const data = await res.json();
         setSelectedOrder(data.order);
         fetchOrders(pagination.page);
@@ -175,6 +181,54 @@ export default function OrdersPage() {
       toast.error('Erreur lors de la mise à jour');
     } finally {
       setUpdatingStatus(false);
+    }
+  };
+
+  const handleSendToEcotrack = async (orderId: string) => {
+    try {
+      setSendingToEcotrack(true);
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sendToEcotrack: true }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toast.success('Commande envoyée vers Ecotrack avec succès !');
+        setSelectedOrder(data.order);
+        fetchOrders(pagination.page);
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Erreur lors de l\'envoi vers Ecotrack');
+      }
+    } catch {
+      toast.error('Erreur de connexion lors de l\'envoi vers Ecotrack');
+    } finally {
+      setSendingToEcotrack(false);
+    }
+  };
+
+  const handleSyncEcotrack = async (orderId: string) => {
+    try {
+      setSyncingEcotrack(true);
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ syncEcotrack: true }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toast.success('Statut Ecotrack synchronisé');
+        setSelectedOrder(data.order);
+        fetchOrders(pagination.page);
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Erreur lors de la synchronisation');
+      }
+    } catch {
+      toast.error('Erreur de connexion lors de la synchronisation');
+    } finally {
+      setSyncingEcotrack(false);
     }
   };
 
@@ -191,7 +245,7 @@ export default function OrdersPage() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher par N°, client, téléphone..."
+            placeholder="Rechercher par N°, client, téléphone, suivi..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -237,6 +291,7 @@ export default function OrdersPage() {
                       <TableHead className="hidden lg:table-cell">Wilaya</TableHead>
                       <TableHead>Montant</TableHead>
                       <TableHead>Statut</TableHead>
+                      <TableHead className="hidden sm:table-cell">Ecotrack</TableHead>
                       <TableHead className="hidden sm:table-cell">Date</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -253,6 +308,18 @@ export default function OrdersPage() {
                           <Badge variant="outline" className={statusColors[order.status] || ''}>
                             {statusLabels[order.status] || order.status}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          {order.ecotrackTracking ? (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              {order.ecotrackTracking.substring(0, 8)}...
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200 text-xs">
+                              Non envoyé
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">
                           {formatDateTime(order.createdAt)}
@@ -429,35 +496,100 @@ export default function OrdersPage() {
                   </div>
                 </div>
 
-                {/* Ecotrack */}
-                {(selectedOrder.ecotrackTracking || selectedOrder.ecotrackId) && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm flex items-center gap-2">
-                        <Truck className="h-4 w-4" />
-                        Suivi Ecotrack
-                      </h4>
-                      <div className="text-sm space-y-1">
+                {/* ──── Ecotrack Section ──── */}
+                <Separator />
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-sm flex items-center gap-2">
+                    <Truck className="h-4 w-4" />
+                    Expédition Ecotrack
+                  </h4>
+
+                  {selectedOrder.ecotrackTracking ? (
+                    /* ── Shipment already created ── */
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-200">
+                        <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-green-800">
+                            Colis envoyé vers Ecotrack
+                          </p>
+                          <p className="text-xs text-green-600 mt-0.5">
+                            N° de suivi : <span className="font-mono font-bold">{selectedOrder.ecotrackTracking}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                         {selectedOrder.ecotrackId && (
-                          <p className="text-muted-foreground">
-                            ID: <span className="font-mono">{selectedOrder.ecotrackId}</span>
-                          </p>
-                        )}
-                        {selectedOrder.ecotrackTracking && (
-                          <p className="text-muted-foreground">
-                            N° suivi: <span className="font-mono font-medium text-foreground">{selectedOrder.ecotrackTracking}</span>
-                          </p>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <span className="text-xs">ID Ecotrack:</span>
+                            <span className="font-mono text-xs">{selectedOrder.ecotrackId}</span>
+                          </div>
                         )}
                         {selectedOrder.ecotrackStatus && (
-                          <p className="text-muted-foreground">
-                            Statut: <Badge variant="outline">{selectedOrder.ecotrackStatus}</Badge>
-                          </p>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <span className="text-xs">Statut:</span>
+                            <Badge variant="outline" className="text-xs">{selectedOrder.ecotrackStatus}</Badge>
+                          </div>
                         )}
                       </div>
+
+                      {/* Sync Ecotrack Status Button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSyncEcotrack(selectedOrder.id)}
+                        disabled={syncingEcotrack}
+                        className="w-full sm:w-auto"
+                      >
+                        {syncingEcotrack ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Synchronisation...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Synchroniser le statut Ecotrack
+                          </>
+                        )}
+                      </Button>
                     </div>
-                  </>
-                )}
+                  ) : (
+                    /* ── No shipment yet ── */
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                        <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-amber-800">
+                            Pas encore envoyé vers Ecotrack
+                          </p>
+                          <p className="text-xs text-amber-600 mt-0.5">
+                            Cliquez sur le bouton ci-dessous pour créer l&apos;expédition
+                          </p>
+                        </div>
+                      </div>
+
+                      <Button
+                        onClick={() => handleSendToEcotrack(selectedOrder.id)}
+                        disabled={sendingToEcotrack}
+                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {sendingToEcotrack ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Envoi en cours vers Ecotrack...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="mr-2 h-4 w-4" />
+                            Envoyer vers Ecotrack
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
 
                 {/* Notes */}
                 {selectedOrder.notes && (

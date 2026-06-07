@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { createEcotrackShipment } from "@/lib/ecotrack";
 
 /**
  * Generate a unique order number
@@ -106,6 +107,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/orders - Create new order from storefront (public)
+ * Automatically creates an Ecotrack shipment if Ecotrack is configured
  */
 export async function POST(request: NextRequest) {
   try {
@@ -114,11 +116,13 @@ export async function POST(request: NextRequest) {
       customerName,
       customerPhone,
       customerWilaya,
+      customerWilayaCode,
       customerCommune,
       customerAddress,
       items,
       notes,
       shippingCost,
+      deliveryType,
     } = body;
 
     if (!customerName || !customerPhone || !customerWilaya || !customerCommune || !customerAddress || !items?.length) {
@@ -267,7 +271,67 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ order }, { status: 201 });
+    // ──── Automatically create Ecotrack shipment ────
+    let ecotrackResult: { ecotrackId?: string | null; ecotrackTracking?: string | null; ecotrackStatus?: string | null } = {};
+
+    try {
+      // Check if Ecotrack is configured
+      const ecotrackSettings = await db.ecotrackSettings.findFirst();
+      if (ecotrackSettings && ecotrackSettings.active) {
+        // Build product description for Ecotrack
+        const productDesc = orderItems
+          .map((item) => `${item.size}/${item.color} x${item.quantity}`)
+          .join(", ");
+
+        // Determine wilaya code
+        const wilayaCode = customerWilayaCode ? parseInt(customerWilayaCode) : null;
+
+        if (wilayaCode) {
+          const shipmentData = await createEcotrackShipment({
+            nom_client: customerName,
+            telephone: customerPhone,
+            adresse: customerAddress,
+            code_wilaya: wilayaCode,
+            commune: customerCommune,
+            montant: totalAmount + shipping,
+            produit: productDesc,
+            type: deliveryType === "stopdesk" ? "stopdesk" : "home",
+            remarque: notes || `Commande ${orderNumber}`,
+            reference: orderNumber,
+            quantite: orderItems.reduce((sum, item) => sum + item.quantity, 0),
+          });
+
+          // Extract tracking info from Ecotrack response
+          // Response format: {success: true, tracking: "EC6KZ...", reference: "CMD-..."}
+          if (shipmentData && shipmentData.success) {
+            ecotrackResult = {
+              ecotrackTracking: shipmentData.tracking || null,
+              ecotrackStatus: "created",
+            };
+
+            // Update the order with Ecotrack info
+            await db.order.update({
+              where: { id: order.id },
+              data: ecotrackResult,
+            });
+          }
+        }
+      }
+    } catch (ecotrackError) {
+      console.error("⚠️ Failed to create Ecotrack shipment (order still saved):", ecotrackError);
+      // Don't fail the order creation - the order is still saved locally
+      // The admin can manually send it to Ecotrack later
+    }
+
+    // Return the order with Ecotrack info merged in
+    const orderWithEcotrack = {
+      ...order,
+      ...(ecotrackResult.ecotrackId && { ecotrackId: ecotrackResult.ecotrackId }),
+      ...(ecotrackResult.ecotrackTracking && { ecotrackTracking: ecotrackResult.ecotrackTracking }),
+      ...(ecotrackResult.ecotrackStatus && { ecotrackStatus: ecotrackResult.ecotrackStatus }),
+    };
+
+    return NextResponse.json({ order: orderWithEcotrack }, { status: 201 });
   } catch (error) {
     console.error("Error creating order:", error);
     return NextResponse.json(

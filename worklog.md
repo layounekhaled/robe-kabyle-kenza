@@ -51,3 +51,31 @@ Stage Summary:
 - Shipping rates display correctly from the API (e.g., Alger: 400 DA home, 200 DA stop desk)
 - All fees cached in one API call for instant lookup
 - Prices now come from the actual Ecotrack API instead of hardcoded fallbacks
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Integrate Ecotrack order creation when customer confirms order
+
+Work Log:
+- Discovered the correct Ecotrack create order endpoint: POST /api/v1/create/order with query params
+- Found that 'type' must be an integer: 1=domicile, 2=stop desk (not "livraison"/"stopdesk")
+- Response format: {"success": true, "tracking": "EC6KZ4260607148398", "reference": "CMD-..."}
+- Updated createEcotrackShipment() in ecotrack.ts with correct API format
+- Updated POST /api/orders to automatically create Ecotrack shipment when order is placed
+- Updated PUT /api/orders/[id] with:
+  - sendToEcotrack: manually send order to Ecotrack (for orders not auto-sent)
+  - syncEcotrack: sync tracking status from Ecotrack API
+  - Proper wilaya code lookup using Ecotrack API wilayas list
+- Added "Envoyer vers Ecotrack" button in admin order detail dialog
+- Added "Synchroniser le statut Ecotrack" button for orders with tracking number
+- Added Ecotrack tracking status column in orders table
+- Tested end-to-end: order created → Ecotrack shipment created → tracking number received (EC6KZ4260607148401)
+- Fixed next.config.ts to remove standalone output for production server compatibility
+
+Stage Summary:
+- Orders are automatically sent to Ecotrack when created from storefront
+- Admin can manually send orders to Ecotrack via "Envoyer vers Ecotrack" button
+- Admin can sync Ecotrack tracking status via "Synchroniser" button
+- Ecotrack tracking numbers are saved to orders and displayed in admin
+- Full flow verified: storefront order → Ecotrack shipment → tracking number saved

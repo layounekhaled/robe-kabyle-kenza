@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { createOrder as createEcotrackOrder } from "@/lib/ecotrack";
+import { createEcotrackShipment, trackOrder } from "@/lib/ecotrack";
 
 /**
  * GET /api/orders/[id] - Get order with items (admin)
@@ -60,7 +60,10 @@ export async function GET(
 
 /**
  * PUT /api/orders/[id] - Update order status (admin)
- * If status changes to "confirmed" and ecotrack is configured, auto-create shipment
+ * Actions:
+ *  - status update (new/confirmed/shipped/delivered/cancelled)
+ *  - sendToEcotrack: manually send order to Ecotrack
+ *  - syncEcotrack: sync tracking status from Ecotrack
  */
 export async function PUT(
   request: NextRequest,
@@ -74,7 +77,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { status, notes, ecotrackTracking, paymentMethod } = body;
+    const { status, notes, ecotrackTracking, paymentMethod, sendToEcotrack, syncEcotrack } = body;
 
     const existing = await db.order.findUnique({
       where: { id },
@@ -82,7 +85,7 @@ export async function PUT(
         customer: true,
         items: {
           include: {
-            product: { select: { name: true } },
+            product: { select: { name: true, reference: true } },
           },
         },
       },
@@ -97,6 +100,7 @@ export async function PUT(
 
     const updateData: Record<string, unknown> = {};
 
+    // ── Handle status update ──
     if (status !== undefined) {
       updateData.status = status;
 
@@ -120,63 +124,104 @@ export async function PUT(
           }
         }
       }
+    }
 
-      // If status changes to "confirmed", try to create Ecotrack shipment
-      if (status === "confirmed" && existing.status !== "confirmed") {
-        try {
-          const ecotrackSettings = await db.ecotrackSettings.findFirst({
-            where: { active: true },
-          });
+    // ── Handle manual "Send to Ecotrack" action ──
+    if (sendToEcotrack && !existing.ecotrackId) {
+      try {
+        const ecotrackSettings = await db.ecotrackSettings.findFirst({
+          where: { active: true },
+        });
 
-          if (ecotrackSettings) {
-            // Build product description
-            const productDesc = existing.items
-              .map((item) => `${item.product.name} (${item.size}/${item.color}) x${item.quantity}`)
-              .join(", ");
+        if (ecotrackSettings) {
+          // Build product description
+          const productDesc = existing.items
+            .map((item) => `${item.product.name} (${item.size}/${item.color}) x${item.quantity}`)
+            .join(", ");
 
-            // Find wilaya code
-            const wilaya = await db.wilaya.findFirst({
-              where: { name: { contains: existing.wilaya } },
+          // Determine wilaya code - try to find from the Ecotrack API wilayas
+          // The wilaya field contains the name, so we need to find the code
+          let wilayaCode: number | null = null;
+          
+          // First, try to parse from the wilaya field (it might contain the code already)
+          // If the order was created from the storefront with customerWilayaCode, it's stored as the wilaya name
+          // We need to look up the code from the Ecotrack API
+          try {
+            const { getWilayas } = await import("@/lib/ecotrack");
+            const wilayas = await getWilayas();
+            const matchedWilaya = wilayas.find(w => w.name === existing.wilaya);
+            if (matchedWilaya) {
+              wilayaCode = matchedWilaya.code;
+            }
+          } catch {
+            // If we can't get wilayas, try a numeric parse
+            const parsed = parseInt(existing.wilaya);
+            if (!isNaN(parsed)) wilayaCode = parsed;
+          }
+
+          if (wilayaCode) {
+            const shipmentData = await createEcotrackShipment({
+              nom_client: existing.customer.name,
+              telephone: existing.phone || existing.customer.phone,
+              adresse: existing.address,
+              code_wilaya: wilayaCode,
+              commune: existing.commune,
+              montant: existing.totalAmount + existing.shippingCost,
+              produit: productDesc,
+              type: "home",
+              remarque: existing.notes || `Commande ${existing.orderNumber}`,
+              reference: existing.orderNumber,
+              quantite: existing.items.reduce((sum, item) => sum + item.quantity, 0),
             });
 
-            if (wilaya) {
-              const wilayaCode = wilaya.code;
-
-              // Try to find commune
-              const commune = await db.commune.findFirst({
-                where: {
-                  wilayaId: wilaya.id,
-                  name: { contains: existing.commune },
-                },
-              });
-
-              const ecotrackResult = await createEcotrackOrder({
-                nom: existing.customer.name,
-                telephone: existing.phone,
-                wilaya_id: wilayaCode,
-                commune_id: commune?.code || 1,
-                adresse: existing.address,
-                prix: existing.totalAmount + existing.shippingCost,
-                produit: productDesc,
-                type: "livraison",
-              });
-
-              if (ecotrackResult) {
-                updateData.ecotrackId =
-                  ecotrackResult.id?.toString() || ecotrackResult.order_id?.toString() || null;
-                updateData.ecotrackTracking =
-                  ecotrackResult.tracking || ecotrackResult.tracking_number || null;
-                updateData.ecotrackStatus = ecotrackResult.status || "created";
-              }
+            // Response format: {success: true, tracking: "EC6KZ...", reference: "CMD-..."}
+            if (shipmentData && shipmentData.success) {
+              updateData.ecotrackTracking = shipmentData.tracking || null;
+              updateData.ecotrackStatus = "created";
             }
+          } else {
+            return NextResponse.json(
+              { error: `Impossible de trouver le code wilaya pour "${existing.wilaya}". Vérifiez que la wilaya est correcte.` },
+              { status: 400 }
+            );
           }
-        } catch (ecotrackError) {
-          console.error("Failed to create Ecotrack shipment:", ecotrackError);
-          // Don't fail the order update if Ecotrack fails
+        } else {
+          return NextResponse.json(
+            { error: "Ecotrack n'est pas configuré. Veuillez d'abord configurer les paramètres Ecotrack." },
+            { status: 400 }
+          );
         }
+      } catch (ecotrackError) {
+        console.error("Failed to create Ecotrack shipment:", ecotrackError);
+        return NextResponse.json(
+          { error: `Erreur Ecotrack: ${ecotrackError instanceof Error ? ecotrackError.message : "Erreur inconnue"}` },
+          { status: 500 }
+        );
       }
     }
 
+    // ── Handle "Sync Ecotrack status" action ──
+    if (syncEcotrack && existing.ecotrackTracking) {
+      try {
+        const trackingData = await trackOrder(existing.ecotrackTracking);
+        if (trackingData) {
+          updateData.ecotrackStatus = trackingData.status || trackingData.etat || trackingData.state || existing.ecotrackStatus;
+          
+          // Auto-update order status based on Ecotrack status
+          const ecotrackStatus = String(updateData.ecotrackStatus).toLowerCase();
+          if (ecotrackStatus.includes("livré") || ecotrackStatus.includes("delivered") || ecotrackStatus === "livree") {
+            updateData.status = "delivered";
+          } else if (ecotrackStatus.includes("en cours") || ecotrackStatus.includes("shipped") || ecotrackStatus.includes("transit")) {
+            updateData.status = "shipped";
+          }
+        }
+      } catch (syncError) {
+        console.error("Failed to sync Ecotrack status:", syncError);
+        // Don't fail the whole update
+      }
+    }
+
+    // ── Other updates ──
     if (notes !== undefined) updateData.notes = notes;
     if (ecotrackTracking !== undefined) updateData.ecotrackTracking = ecotrackTracking;
     if (paymentMethod !== undefined) updateData.paymentMethod = paymentMethod;

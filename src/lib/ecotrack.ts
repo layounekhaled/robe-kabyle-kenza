@@ -294,30 +294,63 @@ export async function getStopDesks(wilayaId: number) {
 /**
  * Create a shipping order in Ecotrack
  * API endpoint: POST /api/v1/create/order
+ * 
+ * Required params: nom_client, telephone, adresse, code_wilaya, commune, montant, produit
+ * Optional: telephone_2, code_postal, remarque, stock, quantite, type (1=domicile, 2=stopdesk), stop_desk, weight, fragile
+ * 
+ * The API accepts query parameters, not JSON body.
+ * Response: {"success":true, "tracking":"EC6KZ4260607148398", "reference":"TEST-002"}
  */
-export async function createOrder(orderData: {
-  nom: string;
+export async function createEcotrackShipment(orderData: {
+  nom_client: string;
   telephone: string;
-  wilaya_id: number;
-  commune?: string;
+  telephone_2?: string;
   adresse: string;
+  code_wilaya: number;
+  commune: string;
+  code_postal?: string;
   montant: number;
   produit: string;
-  type?: string;
+  remarque?: string;
+  type?: "home" | "stopdesk";  // Will be converted to 1 or 2 for the API
   stop_desk?: number;
   quantite?: number;
-  remarque?: string;
-  code_wilaya?: string;
-  code_postal?: string;
+  weight?: number;
+  fragile?: boolean;
+  reference?: string;
 }) {
   try {
-    const response = await ecotrackFetch("/api/v1/create/order", {
+    // Build query parameters - the Ecotrack API uses query params, not JSON body
+    const params = new URLSearchParams();
+    params.set("nom_client", orderData.nom_client);
+    params.set("telephone", orderData.telephone);
+    params.set("adresse", orderData.adresse);
+    params.set("code_wilaya", String(orderData.code_wilaya));
+    params.set("commune", orderData.commune);
+    params.set("montant", String(orderData.montant));
+    params.set("produit", orderData.produit);
+    
+    // Optional params
+    if (orderData.telephone_2) params.set("telephone_2", orderData.telephone_2);
+    if (orderData.code_postal) params.set("code_postal", orderData.code_postal);
+    if (orderData.remarque) params.set("remarque", orderData.remarque);
+    if (orderData.quantite) params.set("quantite", String(orderData.quantite));
+    if (orderData.weight) params.set("weight", String(orderData.weight));
+    if (orderData.fragile) params.set("fragile", "1");
+    if (orderData.reference) params.set("reference", orderData.reference);
+    
+    // Type: 1 = livraison à domicile, 2 = stop desk
+    const typeValue = orderData.type === "stopdesk" ? 2 : 1;
+    params.set("type", String(typeValue));
+    
+    if (orderData.type === "stopdesk" && orderData.stop_desk) {
+      params.set("stop_desk", String(orderData.stop_desk));
+    }
+
+    const response = await ecotrackFetch(`/api/v1/create/order?${params.toString()}`, {
       method: "POST",
-      body: JSON.stringify({
-        ...orderData,
-        type: orderData.type || "livraison",
-      }),
     });
+    
     if (!response.ok) {
       const errorBody = await response.text();
       throw new Error(
@@ -325,12 +358,17 @@ export async function createOrder(orderData: {
       );
     }
     const data = await response.json();
-    return data;
+    return data as { success: boolean; tracking: string; reference: string };
   } catch (error) {
-    console.error("Error creating Ecotrack order:", error);
+    console.error("Error creating Ecotrack shipment:", error);
     throw error;
   }
 }
+
+/**
+ * Backward compatible alias
+ */
+export const createOrder = createEcotrackShipment;
 
 /**
  * Track a shipment by tracking number
