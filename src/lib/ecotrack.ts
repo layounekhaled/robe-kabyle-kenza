@@ -11,64 +11,64 @@ interface EcotrackConfig {
 // Default shipping prices by wilaya code (Algerian delivery standard rates)
 // These are used as fallback when the Ecotrack API is unavailable
 const DEFAULT_SHIPPING_RATES: Record<number, { home: number; stopDesk: number }> = {
-  1: { home: 400, stopDesk: 300 },   // Adrar
-  2: { home: 700, stopDesk: 500 },   // Chlef
-  3: { home: 700, stopDesk: 500 },   // Laghouat
-  4: { home: 700, stopDesk: 500 },   // Oum El Bouaghi
-  5: { home: 700, stopDesk: 500 },   // Batna
-  6: { home: 700, stopDesk: 500 },   // Béjaïa
-  7: { home: 700, stopDesk: 500 },   // Biskra
-  8: { home: 700, stopDesk: 500 },   // Béchar
-  9: { home: 700, stopDesk: 500 },   // Blida
-  10: { home: 700, stopDesk: 500 },  // Bouira
-  11: { home: 700, stopDesk: 500 },  // Tamanrasset
-  12: { home: 700, stopDesk: 500 },  // Tébessa
-  13: { home: 700, stopDesk: 500 },  // Tlemcen
-  14: { home: 700, stopDesk: 500 },  // Tiaret
-  15: { home: 700, stopDesk: 500 },  // Tizi Ouzou
-  16: { home: 400, stopDesk: 300 },  // Alger
-  17: { home: 700, stopDesk: 500 },  // Djelfa
-  18: { home: 700, stopDesk: 500 },  // Jijel
-  19: { home: 700, stopDesk: 500 },  // Sétif
-  20: { home: 700, stopDesk: 500 },  // Saïda
-  21: { home: 700, stopDesk: 500 },  // Skikda
-  22: { home: 700, stopDesk: 500 },  // Sidi Bel Abbès
-  23: { home: 700, stopDesk: 500 },  // Annaba
-  24: { home: 700, stopDesk: 500 },  // Guelma
-  25: { home: 700, stopDesk: 500 },  // Constantine
-  26: { home: 700, stopDesk: 500 },  // Médéa
-  27: { home: 700, stopDesk: 500 },  // Mostaganem
-  28: { home: 700, stopDesk: 500 },  // M'sila
-  29: { home: 700, stopDesk: 500 },  // Mascara
-  30: { home: 700, stopDesk: 500 },  // Ouargla
-  31: { home: 700, stopDesk: 500 },  // Oran
-  32: { home: 700, stopDesk: 500 },  // El Bayadh
-  33: { home: 700, stopDesk: 500 },  // Illizi
-  34: { home: 700, stopDesk: 500 },  // Bordj Bou Arréridj
-  35: { home: 700, stopDesk: 500 },  // Boumerdès
-  36: { home: 700, stopDesk: 500 },  // El Tarf
-  37: { home: 700, stopDesk: 500 },  // Tindouf
-  38: { home: 700, stopDesk: 500 },  // Tissemsilt
-  39: { home: 700, stopDesk: 500 },  // El Oued
-  40: { home: 700, stopDesk: 500 },  // Khenchela
-  41: { home: 700, stopDesk: 500 },  // Souk Ahras
-  42: { home: 700, stopDesk: 500 },  // Tipaza
-  43: { home: 700, stopDesk: 500 },  // Mila
-  44: { home: 700, stopDesk: 500 },  // Aïn Defla
-  45: { home: 700, stopDesk: 500 },  // Naâma
-  46: { home: 700, stopDesk: 500 },  // Aïn Témouchent
-  47: { home: 700, stopDesk: 500 },  // Ghardaïa
-  48: { home: 700, stopDesk: 500 },  // Relizane
-  49: { home: 700, stopDesk: 500 },  // El M'Ghair
-  50: { home: 700, stopDesk: 500 },  // El Meniaa
-  51: { home: 700, stopDesk: 500 },  // Ouled Djellal
-  52: { home: 700, stopDesk: 500 },  // Bordj Badji Mokhtar
-  53: { home: 700, stopDesk: 500 },  // Béni Abbès
-  54: { home: 700, stopDesk: 500 },  // Timimoun
-  55: { home: 700, stopDesk: 500 },  // Touggourt
-  56: { home: 700, stopDesk: 500 },  // Djanet
-  57: { home: 700, stopDesk: 500 },  // In Salah
-  58: { home: 700, stopDesk: 500 },  // In Guezzam
+  1: { home: 1400, stopDesk: 1100 },   // Adrar
+  2: { home: 800, stopDesk: 650 },     // Chlef
+  3: { home: 850, stopDesk: 700 },     // Laghouat
+  4: { home: 800, stopDesk: 700 },     // Oum El Bouaghi
+  5: { home: 800, stopDesk: 700 },     // Batna
+  6: { home: 800, stopDesk: 700 },     // Béjaïa
+  7: { home: 850, stopDesk: 700 },     // Biskra
+  8: { home: 1200, stopDesk: 1100 },   // Béchar
+  9: { home: 600, stopDesk: 600 },     // Blida
+  10: { home: 800, stopDesk: 650 },    // Bouira
+  11: { home: 1800, stopDesk: 1500 },  // Tamanrasset
+  12: { home: 800, stopDesk: 750 },    // Tébessa
+  13: { home: 800, stopDesk: 700 },    // Tlemcen
+  14: { home: 1000, stopDesk: 700 },   // Tiaret
+  15: { home: 700, stopDesk: 700 },    // Tizi Ouzou
+  16: { home: 400, stopDesk: 200 },    // Alger
+  17: { home: 850, stopDesk: 700 },    // Djelfa
+  18: { home: 800, stopDesk: 700 },    // Jijel
+  19: { home: 800, stopDesk: 650 },    // Sétif
+  20: { home: 900, stopDesk: 700 },    // Saïda
+  21: { home: 800, stopDesk: 700 },    // Skikda
+  22: { home: 800, stopDesk: 700 },    // Sidi Bel Abbès
+  23: { home: 800, stopDesk: 700 },    // Annaba
+  24: { home: 800, stopDesk: 700 },    // Guelma
+  25: { home: 800, stopDesk: 700 },    // Constantine
+  26: { home: 800, stopDesk: 700 },    // Médéa
+  27: { home: 800, stopDesk: 700 },    // Mostaganem
+  28: { home: 800, stopDesk: 700 },    // M'sila
+  29: { home: 900, stopDesk: 750 },    // Mascara
+  30: { home: 900, stopDesk: 750 },    // Ouargla
+  31: { home: 800, stopDesk: 550 },    // Oran
+  32: { home: 1000, stopDesk: 750 },   // El Bayadh
+  33: { home: 800, stopDesk: 700 },    // Illizi
+  34: { home: 800, stopDesk: 700 },    // Bordj Bou Arréridj
+  35: { home: 600, stopDesk: 600 },    // Boumerdès
+  36: { home: 800, stopDesk: 700 },    // El Tarf
+  37: { home: 1800, stopDesk: 1450 },  // Tindouf
+  38: { home: 900, stopDesk: 700 },    // Tissemsilt
+  39: { home: 900, stopDesk: 750 },    // El Oued
+  40: { home: 800, stopDesk: 700 },    // Khenchela
+  41: { home: 800, stopDesk: 700 },    // Souk Ahras
+  42: { home: 600, stopDesk: 600 },    // Tipaza
+  43: { home: 800, stopDesk: 700 },    // Mila
+  44: { home: 800, stopDesk: 700 },    // Aïn Defla
+  45: { home: 900, stopDesk: 700 },    // Naâma
+  46: { home: 800, stopDesk: 700 },    // Aïn Témouchent
+  47: { home: 900, stopDesk: 750 },    // Ghardaïa
+  48: { home: 800, stopDesk: 700 },    // Relizane
+  49: { home: 900, stopDesk: 750 },    // El M'Ghair
+  50: { home: 900, stopDesk: 750 },    // El Meniaa
+  51: { home: 900, stopDesk: 750 },    // Ouled Djellal
+  52: { home: 1800, stopDesk: 1500 },  // Bordj Badji Mokhtar
+  53: { home: 1200, stopDesk: 1100 },  // Béni Abbès
+  54: { home: 1400, stopDesk: 1100 },  // Timimoun
+  55: { home: 900, stopDesk: 750 },    // Touggourt
+  56: { home: 1800, stopDesk: 1500 },  // Djanet
+  57: { home: 1800, stopDesk: 1500 },  // In Salah
+  58: { home: 1800, stopDesk: 1500 },  // In Guezzam
 };
 
 /**
@@ -116,16 +116,46 @@ async function ecotrackFetch(
 }
 
 /**
- * Get list of all wilayas from Ecotrack
+ * Normalized wilaya type
  */
-export async function getWilayas() {
+export interface WilayaData {
+  id: number;
+  name: string;
+  code: number;
+}
+
+/**
+ * Normalized commune type
+ */
+export interface CommuneData {
+  id: number;
+  name: string;
+  wilayaId: number;
+  codePostal: string;
+  hasStopDesk: boolean;
+}
+
+/**
+ * Get list of all wilayas from Ecotrack
+ * API endpoint: GET /api/v1/get/wilayas
+ * Response: [{wilaya_id, wilaya_name}]
+ */
+export async function getWilayas(): Promise<WilayaData[]> {
   try {
-    const response = await ecotrackFetch("/api/wilayas");
+    const response = await ecotrackFetch("/api/v1/get/wilayas");
     if (!response.ok) {
       throw new Error(`Ecotrack API error: ${response.status} ${response.statusText}`);
     }
     const data = await response.json();
-    return data;
+    // API returns array of {wilaya_id, wilaya_name}
+    if (Array.isArray(data)) {
+      return data.map((w: { wilaya_id: number; wilaya_name: string }) => ({
+        id: w.wilaya_id,
+        name: w.wilaya_name,
+        code: w.wilaya_id,
+      }));
+    }
+    throw new Error("Unexpected wilayas response format");
   } catch (error) {
     console.error("Error fetching wilayas from Ecotrack:", error);
     throw error;
@@ -134,15 +164,27 @@ export async function getWilayas() {
 
 /**
  * Get communes for a specific wilaya
+ * API endpoint: GET /api/v1/get/communes?wilaya_id=X
+ * Response: [{nom, wilaya_id, code_postal, has_stop_desk}]
  */
-export async function getCommunes(wilayaId: number) {
+export async function getCommunes(wilayaId: number): Promise<CommuneData[]> {
   try {
-    const response = await ecotrackFetch(`/api/communes/${wilayaId}`);
+    const response = await ecotrackFetch(`/api/v1/get/communes?wilaya_id=${wilayaId}`);
     if (!response.ok) {
       throw new Error(`Ecotrack API error: ${response.status} ${response.statusText}`);
     }
     const data = await response.json();
-    return data;
+    // API returns array of {nom, wilaya_id, code_postal, has_stop_desk}
+    if (Array.isArray(data)) {
+      return data.map((c: { nom: string; wilaya_id: number; code_postal: string; has_stop_desk: number }, index: number) => ({
+        id: index + 1, // Communes don't have an explicit ID in API response
+        name: c.nom,
+        wilayaId: c.wilaya_id,
+        codePostal: c.code_postal,
+        hasStopDesk: c.has_stop_desk === 1,
+      }));
+    }
+    throw new Error("Unexpected communes response format");
   } catch (error) {
     console.error(`Error fetching communes for wilaya ${wilayaId}:`, error);
     throw error;
@@ -150,24 +192,37 @@ export async function getCommunes(wilayaId: number) {
 }
 
 /**
- * Calculate shipping cost for a wilaya - returns both home and stop desk prices
+ * Get shipping fees for all wilayas
+ * API endpoint: GET /api/v1/get/fees
+ * Response: {livraison: [{wilaya_id, tarif, tarif_stopdesk}]}
  */
-export async function calculateShipping(wilayaId: number) {
+export async function getFees(): Promise<Record<number, { home: number; stopDesk: number }>> {
   try {
-    const response = await ecotrackFetch(`/api/shipping/${wilayaId}`);
+    const response = await ecotrackFetch("/api/v1/get/fees");
     if (!response.ok) {
       throw new Error(`Ecotrack API error: ${response.status} ${response.statusText}`);
     }
     const data = await response.json();
-    return data;
+    // API returns {livraison: [{wilaya_id, tarif, tarif_stopdesk}]}
+    const feesMap: Record<number, { home: number; stopDesk: number }> = {};
+    if (data && Array.isArray(data.livraison)) {
+      for (const fee of data.livraison) {
+        feesMap[fee.wilaya_id] = {
+          home: parseInt(fee.tarif) || 700,
+          stopDesk: parseInt(fee.tarif_stopdesk) || 500,
+        };
+      }
+    }
+    return feesMap;
   } catch (error) {
-    console.error(`Error calculating shipping for wilaya ${wilayaId}:`, error);
+    console.error("Error fetching fees from Ecotrack:", error);
     throw error;
   }
 }
 
 /**
- * Get shipping rates for a wilaya (both home delivery and stop desk)
+ * Get shipping rates for a specific wilaya (both home delivery and stop desk)
+ * Uses the /api/v1/get/fees endpoint and filters by wilaya_id
  * Falls back to default rates if API is unavailable
  */
 export async function getShippingRates(wilayaCode: number): Promise<{
@@ -176,15 +231,12 @@ export async function getShippingRates(wilayaCode: number): Promise<{
   source: "api" | "fallback";
 }> {
   try {
-    const shipping = await calculateShipping(wilayaCode);
-    // Try to extract prices from the API response
-    const homePrice = shipping?.prix_domicile || shipping?.home_price || shipping?.price || shipping?.prix;
-    const stopDeskPrice = shipping?.prix_stopdesk || shipping?.stop_desk_price || shipping?.stopdesk_price;
-
-    if (homePrice || stopDeskPrice) {
+    const allFees = await getFees();
+    const fee = allFees[wilayaCode];
+    if (fee) {
       return {
-        home: parseInt(homePrice) || 700,
-        stopDesk: parseInt(stopDeskPrice) || 500,
+        home: fee.home,
+        stopDesk: fee.stopDesk,
         source: "api",
       };
     }
@@ -201,16 +253,38 @@ export async function getShippingRates(wilayaCode: number): Promise<{
 }
 
 /**
+ * Calculate shipping cost for a wilaya - returns both home and stop desk prices
+ * Kept for backward compatibility
+ */
+export async function calculateShipping(wilayaId: number): Promise<{
+  prix_domicile: number;
+  prix_stopdesk: number;
+  wilaya_id: number;
+}> {
+  const rates = await getShippingRates(wilayaId);
+  return {
+    prix_domicile: rates.home,
+    prix_stopdesk: rates.stopDesk,
+    wilaya_id: wilayaId,
+  };
+}
+
+/**
  * Get stop desks (bureaux) for a specific wilaya
+ * Note: The Ecotrack API doesn't have a dedicated stop desk endpoint in v1
+ * Stop desk availability is indicated by has_stop_desk in commune data
  */
 export async function getStopDesks(wilayaId: number) {
   try {
-    const response = await ecotrackFetch(`/api/stopdesk/${wilayaId}`);
-    if (!response.ok) {
-      throw new Error(`Ecotrack API error: ${response.status} ${response.statusText}`);
-    }
-    const data = await response.json();
-    return data;
+    // Use communes endpoint to find which communes have stop desks
+    const communes = await getCommunes(wilayaId);
+    const stopDeskCommunes = communes.filter(c => c.hasStopDesk);
+    return stopDeskCommunes.map(c => ({
+      id: c.id,
+      name: c.name,
+      wilaya_id: c.wilayaId,
+      has_stop_desk: true,
+    }));
   } catch (error) {
     console.error(`Error fetching stop desks for wilaya ${wilayaId}:`, error);
     throw error;
@@ -219,20 +293,25 @@ export async function getStopDesks(wilayaId: number) {
 
 /**
  * Create a shipping order in Ecotrack
+ * API endpoint: POST /api/v1/create/order
  */
 export async function createOrder(orderData: {
   nom: string;
   telephone: string;
   wilaya_id: number;
-  commune_id: number;
+  commune?: string;
   adresse: string;
-  prix: number;
+  montant: number;
   produit: string;
   type?: string;
-  stopdesk_id?: number;
+  stop_desk?: number;
+  quantite?: number;
+  remarque?: string;
+  code_wilaya?: string;
+  code_postal?: string;
 }) {
   try {
-    const response = await ecotrackFetch("/api/orders", {
+    const response = await ecotrackFetch("/api/v1/create/order", {
       method: "POST",
       body: JSON.stringify({
         ...orderData,
@@ -255,10 +334,11 @@ export async function createOrder(orderData: {
 
 /**
  * Track a shipment by tracking number
+ * API endpoint: GET /api/v1/get/tracking/info?tracking=X
  */
 export async function trackOrder(trackingNumber: string) {
   try {
-    const response = await ecotrackFetch(`/api/track/${trackingNumber}`);
+    const response = await ecotrackFetch(`/api/v1/get/tracking/info?tracking=${trackingNumber}`);
     if (!response.ok) {
       throw new Error(`Ecotrack API error: ${response.status} ${response.statusText}`);
     }

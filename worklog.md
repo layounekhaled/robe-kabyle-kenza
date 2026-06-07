@@ -23,3 +23,31 @@ Stage Summary:
 - Order form includes delivery type selector (Livraison à domicile vs Stop Desk)
 - Shipping rates available for all 58 wilayas (home + stop desk pricing)
 - Instagram page inaccessible for scraping (JS-rendered), generated AI product photos instead
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix Ecotrack API integration - communes not loading and prices not fetched
+
+Work Log:
+- Discovered the Ecotrack API endpoints were wrong (using /api/wilayas instead of /api/v1/get/wilayas)
+- Found correct API endpoints by parsing the Postman collection: /api/v1/get/wilayas, /api/v1/get/communes?wilaya_id=X, /api/v1/get/fees
+- Updated src/lib/ecotrack.ts with correct endpoints and normalized response formats
+- Updated src/app/api/ecotrack/route.ts to handle new data formats and added fees endpoint
+- Updated src/app/order/page.tsx to fix wilaya/commune selection and shipping price display:
+  - Changed Wilaya and Commune interfaces to match API response format
+  - Used wilaya code as Select value for proper API matching
+  - Used commune name as Select value since API doesn't provide stable IDs
+  - Added allFees caching to reduce API calls (fetch fees once, use for all wilayas)
+  - Updated shipping rate calculation to use cached fees first
+  - Added deliveryType to form schema
+- Added allowedDevOrigins to next.config.ts to fix CORS warning
+- Verified all endpoints work correctly via curl tests
+
+Stage Summary:
+- Ecotrack API integration fully fixed and working
+- 55 wilayas load correctly with codes (1-58)
+- Communes load correctly when a wilaya is selected (e.g., 57 for Alger, 26 for Oran)
+- Shipping rates display correctly from the API (e.g., Alger: 400 DA home, 200 DA stop desk)
+- All fees cached in one API call for instant lookup
+- Prices now come from the actual Ecotrack API instead of hardcoded fallbacks

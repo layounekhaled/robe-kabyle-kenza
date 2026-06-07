@@ -76,15 +76,17 @@ interface Product {
 }
 
 interface Wilaya {
-  id: string | number;
+  id: number;
   name: string;
-  code?: number;
+  code: number;
 }
 
 interface Commune {
-  id: string | number;
+  id: number;
   name: string;
-  code?: number;
+  wilayaId: number;
+  codePostal: string;
+  hasStopDesk: boolean;
 }
 
 const COLOR_MAP: Record<string, string> = {
@@ -110,6 +112,7 @@ const customerSchema = z.object({
   communeId: z.string().min(1, "Veuillez sélectionner une commune"),
   address: z.string().min(5, "L'adresse est requise (min. 5 caractères)"),
   notes: z.string().optional(),
+  deliveryType: z.enum(["home", "stopdesk"]).default("home"),
 });
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
@@ -151,6 +154,7 @@ function OrderFormContent() {
   const [shippingRates, setShippingRates] = useState<{ home: number; stopDesk: number; source: string } | null>(null);
   const [shippingCost, setShippingCost] = useState<number | null>(null);
   const [loadingShipping, setLoadingShipping] = useState(false);
+  const [allFees, setAllFees] = useState<Record<number, { home: number; stopDesk: number }> | null>(null);
 
   // Order result
   const [orderResult, setOrderResult] = useState<{
@@ -228,7 +232,7 @@ function OrderFormContent() {
     loadProducts();
   }, []);
 
-  // Load wilayas
+  // Load wilayas and shipping fees
   useEffect(() => {
     async function loadWilayas() {
       setLoadingWilayas(true);
@@ -244,7 +248,19 @@ function OrderFormContent() {
         setLoadingWilayas(false);
       }
     }
+    async function loadFees() {
+      try {
+        const res = await fetch("/api/ecotrack?action=fees");
+        if (res.ok) {
+          const data = await res.json();
+          setAllFees(data.fees || null);
+        }
+      } catch {
+        // Fees will be fetched per wilaya as fallback
+      }
+    }
     loadWilayas();
+    loadFees();
   }, []);
 
   // Load communes when wilaya changes
@@ -284,6 +300,16 @@ function OrderFormContent() {
     async function calcShipping() {
       setLoadingShipping(true);
       try {
+        const wilayaCode = parseInt(selectedWilayaId);
+        // First try to use cached fees
+        if (allFees && allFees[wilayaCode]) {
+          const rates = allFees[wilayaCode];
+          setShippingRates({ home: rates.home, stopDesk: rates.stopDesk, source: "api" });
+          setShippingCost(deliveryType === "home" ? rates.home : rates.stopDesk);
+          setLoadingShipping(false);
+          return;
+        }
+        // Fallback: fetch rates for this specific wilaya
         const res = await fetch(
           `/api/ecotrack?action=rates&wilayaId=${selectedWilayaId}`
         );
@@ -302,7 +328,7 @@ function OrderFormContent() {
       }
     }
     calcShipping();
-  }, [selectedWilayaId, deliveryType]);
+  }, [selectedWilayaId, deliveryType, allFees]);
 
   // Submit handler
   const handleSubmitOrder = async () => {
@@ -321,19 +347,20 @@ function OrderFormContent() {
     setSubmitting(true);
     try {
       const formValues = form.getValues();
+      // wilayaId is the wilaya code (e.g., "16" for Alger)
       const selectedWilaya = wilayas.find(
-        (w) => String(w.id) === formValues.wilayaId ||
-               String(w.code) === formValues.wilayaId
+        (w) => String(w.code) === formValues.wilayaId
       );
+      // communeId is the commune name (e.g., "Alger Centre")
       const selectedCommune = communes.find(
-        (c) => String(c.id) === formValues.communeId ||
-               String(c.code) === formValues.communeId
+        (c) => c.name === formValues.communeId
       );
 
       const payload = {
         customerName: formValues.name,
         customerPhone: formValues.phone,
         customerWilaya: selectedWilaya?.name || formValues.wilayaId,
+        customerWilayaCode: formValues.wilayaId,
         customerCommune: selectedCommune?.name || formValues.communeId,
         customerAddress: formValues.address,
         items: [
@@ -346,6 +373,7 @@ function OrderFormContent() {
         ],
         notes: formValues.notes || undefined,
         shippingCost: shippingCost || 0,
+        deliveryType,
       };
 
       const res = await fetch("/api/orders", {
@@ -760,16 +788,16 @@ function OrderFormContent() {
                                 <MapPin className="inline h-3 w-3 mr-1" />
                                 Wilaya <span className="text-red-500">*</span>
                               </FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <Select onValueChange={(value) => { field.onChange(value); }} value={field.value || undefined}>
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder={loadingWilayas ? "Chargement..." : "Sélectionner"} />
+                                    <SelectValue placeholder={loadingWilayas ? "Chargement..." : "Sélectionner une wilaya"} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent className="max-h-60">
                                   {wilayas.map((w) => (
-                                    <SelectItem key={String(w.id || w.code)} value={String(w.id || w.code)}>
-                                      {w.code ? `${w.code} - ` : ""}{w.name}
+                                    <SelectItem key={String(w.code)} value={String(w.code)}>
+                                      {w.code} - {w.name}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -787,7 +815,7 @@ function OrderFormContent() {
                               <FormLabel>Commune <span className="text-red-500">*</span></FormLabel>
                               <Select
                                 onValueChange={field.onChange}
-                                defaultValue={field.value}
+                                value={field.value || undefined}
                                 disabled={!selectedWilayaId || loadingCommunes}
                               >
                                 <FormControl>
@@ -795,17 +823,17 @@ function OrderFormContent() {
                                     <SelectValue
                                       placeholder={
                                         loadingCommunes
-                                          ? "Chargement..."
+                                          ? "Chargement des communes..."
                                           : !selectedWilayaId
                                           ? "Choisissez d'abord une wilaya"
-                                          : "Sélectionner"
+                                          : "Sélectionner une commune"
                                       }
                                     />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent className="max-h-60">
                                   {communes.map((c) => (
-                                    <SelectItem key={String(c.id || c.code)} value={String(c.id || c.code)}>
+                                    <SelectItem key={`${c.name}-${c.codePostal}`} value={c.name}>
                                       {c.name}
                                     </SelectItem>
                                   ))}

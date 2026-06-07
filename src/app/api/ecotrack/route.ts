@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getWilayas, getCommunes, calculateShipping, getShippingRates, getStopDesks } from "@/lib/ecotrack";
+import { getWilayas, getCommunes, calculateShipping, getShippingRates, getStopDesks, getFees } from "@/lib/ecotrack";
 
 /**
  * GET /api/ecotrack - Ecotrack API proxy
@@ -11,6 +11,7 @@ import { getWilayas, getCommunes, calculateShipping, getShippingRates, getStopDe
  * - ?action=communes&wilayaId=X: Fetch communes (Ecotrack API → fallback DB locale)
  * - ?action=shipping&wilayaId=X: Calculate shipping (home + stop desk)
  * - ?action=rates&wilayaId=X: Get shipping rates (home + stop desk prices)
+ * - ?action=fees: Get all shipping fees at once
  * - ?action=stopdesk&wilayaId=X: Get stop desks for a wilaya
  */
 export async function GET(request: NextRequest) {
@@ -39,8 +40,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Public actions: wilayas, communes, shipping (needed for storefront)
-    const publicActions = ["wilayas", "communes", "shipping", "rates", "stopdesk"];
+    // Public actions: wilayas, communes, shipping, rates, fees, stopdesk (needed for storefront)
+    const publicActions = ["wilayas", "communes", "shipping", "rates", "fees", "stopdesk"];
 
     if (!publicActions.includes(action)) {
       const session = await getServerSession(authOptions);
@@ -56,16 +57,20 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ wilayas });
         } catch {
           // Fallback: load wilayas from local database
-          const localWilayas = await db.wilaya.findMany({
-            orderBy: { code: "asc" },
-          });
-          return NextResponse.json({
-            wilayas: localWilayas.map((w) => ({
-              id: w.id,
-              code: w.code,
-              name: w.name,
-            })),
-          });
+          try {
+            const localWilayas = await db.wilaya.findMany({
+              orderBy: { code: "asc" },
+            });
+            return NextResponse.json({
+              wilayas: localWilayas.map((w) => ({
+                id: w.id,
+                code: w.code,
+                name: w.name,
+              })),
+            });
+          } catch {
+            return NextResponse.json({ wilayas: [] });
+          }
         }
       }
 
@@ -82,29 +87,41 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ communes });
         } catch {
           // Fallback: load communes from local database
-          // Try to find the wilaya first (wilayaId could be a code or a DB id)
-          let localWilaya = await db.wilaya.findFirst({
-            where: { code: parseInt(wilayaId) },
-          });
-          if (!localWilaya) {
-            localWilaya = await db.wilaya.findUnique({
-              where: { id: wilayaId },
+          try {
+            let localWilaya = await db.wilaya.findFirst({
+              where: { code: parseInt(wilayaId) },
             });
-          }
-          if (!localWilaya) {
+            if (!localWilaya) {
+              localWilaya = await db.wilaya.findUnique({
+                where: { id: wilayaId },
+              });
+            }
+            if (!localWilaya) {
+              return NextResponse.json({ communes: [] });
+            }
+            const localCommunes = await db.commune.findMany({
+              where: { wilayaId: localWilaya.id },
+              orderBy: { name: "asc" },
+            });
+            return NextResponse.json({
+              communes: localCommunes.map((c) => ({
+                id: c.id,
+                code: c.code,
+                name: c.name,
+              })),
+            });
+          } catch {
             return NextResponse.json({ communes: [] });
           }
-          const localCommunes = await db.commune.findMany({
-            where: { wilayaId: localWilaya.id },
-            orderBy: { name: "asc" },
-          });
-          return NextResponse.json({
-            communes: localCommunes.map((c) => ({
-              id: c.id,
-              code: c.code,
-              name: c.name,
-            })),
-          });
+        }
+      }
+
+      case "fees": {
+        try {
+          const fees = await getFees();
+          return NextResponse.json({ fees });
+        } catch {
+          return NextResponse.json({ fees: {} });
         }
       }
 
@@ -118,9 +135,8 @@ export async function GET(request: NextRequest) {
         }
         try {
           const shipping = await calculateShipping(parseInt(wilayaId));
-          return NextResponse.json({ shipping });
+          return NextResponse.json({ shipping, source: "api" });
         } catch {
-          // Fallback: return default shipping costs based on wilaya code
           const code = parseInt(wilayaId);
           const rates = await getShippingRates(code);
           return NextResponse.json({
