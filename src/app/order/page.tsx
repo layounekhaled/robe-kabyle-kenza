@@ -21,6 +21,8 @@ import {
   Check,
   X,
   Search,
+  Home,
+  MapPinned,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -145,6 +147,8 @@ function OrderFormContent() {
   const [loadingCommunes, setLoadingCommunes] = useState(false);
 
   // Shipping
+  const [deliveryType, setDeliveryType] = useState<"home" | "stopdesk">("home");
+  const [shippingRates, setShippingRates] = useState<{ home: number; stopDesk: number; source: string } | null>(null);
   const [shippingCost, setShippingCost] = useState<number | null>(null);
   const [loadingShipping, setLoadingShipping] = useState(false);
 
@@ -270,30 +274,35 @@ function OrderFormContent() {
     form.setValue("communeId", "");
   }, [selectedWilayaId, form]);
 
-  // Calculate shipping when wilaya is selected
+  // Calculate shipping rates when wilaya is selected
   useEffect(() => {
     if (!selectedWilayaId) {
       setShippingCost(null);
+      setShippingRates(null);
       return;
     }
     async function calcShipping() {
       setLoadingShipping(true);
       try {
         const res = await fetch(
-          `/api/ecotrack?action=shipping&wilayaId=${selectedWilayaId}`
+          `/api/ecotrack?action=rates&wilayaId=${selectedWilayaId}`
         );
         if (res.ok) {
           const data = await res.json();
-          setShippingCost(data.shipping?.price || data.shipping || 0);
+          const rates = data.rates;
+          setShippingRates(rates);
+          // Set shipping cost based on current delivery type
+          setShippingCost(deliveryType === "home" ? rates.home : rates.stopDesk);
         }
       } catch {
         setShippingCost(null);
+        setShippingRates(null);
       } finally {
         setLoadingShipping(false);
       }
     }
     calcShipping();
-  }, [selectedWilayaId]);
+  }, [selectedWilayaId, deliveryType]);
 
   // Submit handler
   const handleSubmitOrder = async () => {
@@ -836,12 +845,79 @@ function OrderFormContent() {
                         )}
                       />
 
+                      {/* Delivery type selector */}
+                      {selectedWilayaId && (
+                        <div className="space-y-3">
+                          <Label className="text-sm font-semibold text-kabyle-dark">
+                            Type de livraison <span className="text-red-500">*</span>
+                          </Label>
+                          <div className="grid grid-cols-2 gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setDeliveryType("home")}
+                              className={cn(
+                                "flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all",
+                                deliveryType === "home"
+                                  ? "border-kabyle-terracotta bg-kabyle-cream"
+                                  : "border-transparent bg-muted hover:bg-kabyle-cream/50"
+                              )}
+                            >
+                              <Home className={cn(
+                                "h-5 w-5 shrink-0",
+                                deliveryType === "home" ? "text-kabyle-terracotta" : "text-muted-foreground"
+                              )} />
+                              <div>
+                                <p className={cn(
+                                  "text-sm font-medium",
+                                  deliveryType === "home" ? "text-kabyle-dark" : "text-muted-foreground"
+                                )}>
+                                  Livraison à domicile
+                                </p>
+                                {shippingRates && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {formatPrice(shippingRates.home)}
+                                  </p>
+                                )}
+                              </div>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeliveryType("stopdesk")}
+                              className={cn(
+                                "flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all",
+                                deliveryType === "stopdesk"
+                                  ? "border-kabyle-terracotta bg-kabyle-cream"
+                                  : "border-transparent bg-muted hover:bg-kabyle-cream/50"
+                              )}
+                            >
+                              <MapPinned className={cn(
+                                "h-5 w-5 shrink-0",
+                                deliveryType === "stopdesk" ? "text-kabyle-terracotta" : "text-muted-foreground"
+                              )} />
+                              <div>
+                                <p className={cn(
+                                  "text-sm font-medium",
+                                  deliveryType === "stopdesk" ? "text-kabyle-dark" : "text-muted-foreground"
+                                )}>
+                                  Stop Desk
+                                </p>
+                                {shippingRates && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {formatPrice(shippingRates.stopDesk)}
+                                  </p>
+                                )}
+                              </div>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Shipping cost */}
                       {selectedWilayaId && (
                         <div className="flex items-center justify-between p-3 rounded-lg border border-kabyle-terracotta/20 bg-kabyle-cream/20">
                           <span className="text-sm text-muted-foreground flex items-center gap-1">
                             <Package className="h-4 w-4" />
-                            Frais de livraison
+                            Frais de livraison{deliveryType === "home" ? " (domicile)" : " (Stop Desk)"}
                           </span>
                           {loadingShipping ? (
                             <Loader2 className="h-4 w-4 animate-spin text-kabyle-terracotta" />

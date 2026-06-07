@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Shirt, MapPin, Phone, Mail, Facebook, Instagram } from "lucide-react";
+import { Shirt, MapPin, Phone, Facebook, Instagram } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -16,7 +16,7 @@ export default function Footer() {
                 <Shirt className="h-5 w-5" />
               </div>
               <span className="text-lg font-bold text-white">
-                Boutique Robes Kabyles
+                Robe Kabyle Kenza
               </span>
             </div>
             <p className="text-sm text-white/70 leading-relaxed">
@@ -35,15 +35,11 @@ export default function Footer() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-center gap-2 text-white/70">
                 <MapPin className="h-4 w-4 text-kabyle-terracotta shrink-0" />
-                Tizi Ouzou, Algérie
+                Rue de la Victoire, Aïn Taya, Alger Plage, Algérie
               </li>
               <li className="flex items-center gap-2 text-white/70">
                 <Phone className="h-4 w-4 text-kabyle-terracotta shrink-0" />
-                +213 555 123 456
-              </li>
-              <li className="flex items-center gap-2 text-white/70">
-                <Mail className="h-4 w-4 text-kabyle-terracotta shrink-0" />
-                contact@boutique-kabyles.dz
+                0561 34 27 62
               </li>
             </ul>
           </div>
@@ -92,7 +88,9 @@ export default function Footer() {
                 <Facebook className="h-4 w-4" />
               </a>
               <a
-                href="#"
+                href="https://www.instagram.com/robe_kabyle_kenza/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-kabyle-terracotta hover:text-white transition-colors"
                 aria-label="Instagram"
               >
@@ -103,7 +101,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 pt-6 border-t border-white/10 text-center text-xs text-white/50">
-          © {new Date().getFullYear()} Boutique Robes Kabyles. Tous droits
+          © {new Date().getFullYear()} Robe Kabyle Kenza. Tous droits
           réservés. Fait avec ❤ en Kabylie.
         </div>
       </div>

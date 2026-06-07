@@ -1,0 +1,47 @@
+[
+  {
+    "url": "https://fr.scribd.com/document/825596285/Documentation-Noest-New",
+    "name": "Spécifications API pour Ecotrack | PDF - Scribd",
+    "snippet": "Chaque opération nécessite un api_token et un user_guid fournis par NOEST, avec des conditions spécifiques pour les champs requis. Il inclut également des ...\nChaque opération nécessite un api_token et un user_guid fournis par NOEST, avec des conditions spécifiques pour les champs requis. ... livraison stopdesk.",
+    "host_name": "fr.scribd.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.scribd.com/document/796285018/Doc-API-Noest",
+    "name": "Spécification API pour suivi NOEST | PDF - Scribd",
+    "snippet": "API SPECIFICATION – ECOTRACK. Lien https:// [Link]. api_token Fournit par NOEST. user_guid Fournit par NOEST. 1- Ajouter une commande.\nAPI SPECIFICATION – ECOTRACK. Lien https:// [Link]. api_token Fournit par NOEST. user_guid Fournit par NOEST ... wilaya L'identifiant de la wilaya ...",
+    "host_name": "www.scribd.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://github.com/kossa/algerian-cities-api",
+    "name": "kossa/algerian-cities-api - GitHub",
+    "snippet": "API to use wilayas and communes of Algeria in Arabic and French language, included zip code and latitude/longitude - kossa/algerian-cities-api.",
+    "host_name": "github.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://api-docs.ecotrak.com",
+    "name": "Ecotrak External API",
+    "snippet": "Introduction. Welcome to the API demos workspace. This workspace contains Postman collections that you can quickly demo and share our APIs with consumers.",
+    "host_name": "api-docs.ecotrak.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://docs.gitea.com/next/development/api-usage",
+    "name": "API Usage - Gitea Documentation",
+    "snippet": "Gitea supports these methods of API authentication: HTTP basic authentication; token=... parameter in URL query string; access_token=... parameter in URL query ...",
+    "host_name": "docs.gitea.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  }
+]

@@ -969,7 +969,7 @@ export default function POSPage() {
             <div className="space-y-4" id="receipt">
               {/* Receipt Header */}
               <div className="text-center border-b pb-4">
-                <h3 className="font-bold text-lg">Boutique Robes Kabyles</h3>
+                <h3 className="font-bold text-lg">Robe Kabyle Kenza</h3>
                 <p className="text-sm text-muted-foreground">
                   Reçu de vente
                 </p>
@@ -1047,7 +1047,7 @@ export default function POSPage() {
               <p className="text-center text-xs text-muted-foreground">
                 Merci pour votre achat !
                 <br />
-                Boutique Robes Kabyles vous souhaite une excellente journée.
+                Robe Kabyle Kenza vous souhaite une excellente journée.
               </p>
             </div>
           )}

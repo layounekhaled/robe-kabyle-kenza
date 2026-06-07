@@ -10,7 +10,7 @@ import {
   Image as ImageIcon,
   Loader2,
   X,
-  Upload,
+  Link,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -114,7 +114,7 @@ export default function ProductsPage() {
     { size: '', color: '', stock: '0' },
   ]);
   const [formImages, setFormImages] = useState<Array<{ url: string; alt?: string; sortOrder: number }>>([]);
-  const [uploading, setUploading] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState('');
 
   const fetchProducts = useCallback(async (page = 1) => {
     try {
@@ -248,29 +248,21 @@ export default function ProductsPage() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    setUploading(true);
-    try {
-      for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const res = await fetch('/api/images', { method: 'POST', body: formData });
-        if (res.ok) {
-          const data = await res.json();
-          setFormImages((prev) => [...prev, { url: data.url, sortOrder: prev.length }]);
-        } else {
-          toast.error(`Erreur lors de l'upload de ${file.name}`);
-        }
-      }
-    } catch {
-      toast.error("Erreur lors de l'upload des images");
-    } finally {
-      setUploading(false);
+  const addImageUrl = () => {
+    const url = imageUrlInput.trim();
+    if (!url) {
+      toast.error('Veuillez entrer une URL d\'image');
+      return;
     }
+    // Basic URL validation
+    try {
+      new URL(url);
+    } catch {
+      toast.error('URL invalide. Veuillez entrer une URL valide (ex: https://...)');
+      return;
+    }
+    setFormImages((prev) => [...prev, { url, sortOrder: prev.length }]);
+    setImageUrlInput('');
   };
 
   const removeImage = (index: number) => {
@@ -592,9 +584,9 @@ export default function ProductsPage() {
               </div>
             </div>
 
-            {/* Image Upload */}
+            {/* Image URLs */}
             <div className="space-y-3">
-              <Label>Images</Label>
+              <Label>Images (URL)</Label>
               <div className="flex flex-wrap gap-3 mb-3">
                 {formImages.map((img, index) => (
                   <div key={index} className="relative group w-20 h-20">
@@ -602,6 +594,9 @@ export default function ProductsPage() {
                       src={img.url}
                       alt={`Image ${index + 1}`}
                       className="w-20 h-20 rounded-lg object-cover border"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/logo.svg';
+                      }}
                     />
                     <button
                       onClick={() => removeImage(index)}
@@ -615,24 +610,35 @@ export default function ProductsPage() {
                   </div>
                 ))}
               </div>
-              <label className="flex items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex flex-col items-center gap-1 text-muted-foreground">
-                  {uploading ? (
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  ) : (
-                    <Upload className="h-6 w-6" />
-                  )}
-                  <span className="text-xs">{uploading ? 'Upload en cours...' : 'Cliquez pour ajouter des images'}</span>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="https://exemple.com/image.jpg"
+                    value={imageUrlInput}
+                    onChange={(e) => setImageUrlInput(e.target.value)}
+                    className="pl-10"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addImageUrl();
+                      }
+                    }}
+                  />
                 </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  disabled={uploading}
-                />
-              </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addImageUrl}
+                  disabled={!imageUrlInput.trim()}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Ajouter
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Collez l&apos;URL d&apos;une image (Instagram, Facebook, etc.) et cliquez sur Ajouter
+              </p>
             </div>
           </div>
 

@@ -64,7 +64,7 @@ export default function POSLayout({
         <div className="flex items-center gap-3">
           <ShoppingBag className="w-6 h-6" />
           <h1 className="text-lg font-bold tracking-tight">
-            Caisse - Boutique Robes Kabyles
+            Caisse - Robe Kabyle Kenza
           </h1>
         </div>
         <div className="flex items-center gap-4">

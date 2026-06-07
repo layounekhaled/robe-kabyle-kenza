@@ -359,7 +359,7 @@ export default function HomePage() {
                 {
                   name: "Karima A.",
                   wilaya: "Béjaïa",
-                  text: "Service client exceptionnel. Ils m'ont aidée à choisir la bonne taille. La robe me va comme un gant. Merci Boutique Robes Kabyles !",
+                  text: "Service client exceptionnel. Ils m'ont aidée à choisir la bonne taille. La robe me va comme un gant. Merci Robe Kabyle Kenza !",
                 },
               ].map((testimonial) => (
                 <Card

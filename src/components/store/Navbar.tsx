@@ -42,7 +42,7 @@ export default function Navbar() {
             <div className="relative h-9 w-9 overflow-hidden rounded-lg transition-transform group-hover:scale-105">
               <Image
                 src="/logo-kabyle.png"
-                alt="Boutique Robes Kabyles"
+                alt="Robe Kabyle Kenza"
                 fill
                 className="object-cover"
                 sizes="36px"
@@ -50,11 +50,11 @@ export default function Navbar() {
             </div>
             <div className="hidden sm:block">
               <span className="text-lg font-bold text-kabyle-dark">
-                Boutique Robes Kabyles
+                Robe Kabyle Kenza
               </span>
             </div>
             <div className="sm:hidden">
-              <span className="text-base font-bold text-kabyle-dark">BRK</span>
+              <span className="text-base font-bold text-kabyle-dark">RKK</span>
             </div>
           </Link>
 

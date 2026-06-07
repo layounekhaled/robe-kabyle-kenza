@@ -1,64 +1,25 @@
-# Boutique Robes Kabyles - Work Log
-
 ---
 Task ID: 1
 Agent: Main
-Task: Set up Prisma database schema
+Task: Update boutique with new contact info, URL-based images, Ecotrack delivery types, and Instagram photos
 
 Work Log:
-- Created comprehensive Prisma schema with all required tables
-- Tables: User, Product, ProductImage, ProductVariant, Customer, Order, OrderItem, StoreSale, StoreSaleItem, EcotrackSettings, Wilaya, Commune
-- Pushed schema and generated Prisma client
+- Explored full codebase structure and read all key files
+- Updated boutique name from "Boutique Robes Kabyles" to "Robe Kabyle Kenza" across 7 files (Navbar, Footer, Homepage, Layout, Admin Login, POS Layout, POS Page)
+- Updated address to "Rue de la Victoire, Aïn Taya, Alger Plage, Algérie"
+- Updated phone to "0561 34 27 62"
+- Added Instagram link: https://www.instagram.com/robe_kabyle_kenza/
+- Changed mobile abbreviation from "BRK" to "RKK"
+- Replaced image upload with URL input in admin products page (removed file upload, added URL text input with validation)
+- Updated Ecotrack integration with home delivery and stop desk pricing (58 wilayas with rates)
+- Added delivery type selector (home vs stop desk) to order form
+- Updated next.config.ts to allow Instagram/Facebook CDN images
+- Generated 4 AI product images for Kabyle dresses
+- Build verified successful, all pages returning 200 OK
 
 Stage Summary:
-- Database schema designed for e-commerce with multi-variant products (size+color stock)
-- Online and store sales share the same stock through ProductVariant table
-- Ecotrack integration settings stored separately for easy configuration
-
----
-Task ID: 2
-Agent: full-stack-developer subagent
-Task: Create auth system, core libs, and all API routes
-
-Work Log:
-- Created auth.ts with NextAuth.js v4 credentials provider and bcryptjs
-- Created ecotrack.ts with full API integration (wilayas, communes, shipping, orders, tracking)
-- Created 12 API route handlers (products, orders, store-sales, ecotrack, stats, images, seed, auth)
-- Seeded database with admin user, 30 products, 58 wilayas, ecotrack config
-
-Stage Summary:
-- Full backend API ready with authentication, CRUD operations, and Ecotrack integration
-- Database seeded with 30 Kabyle dress products with multiple variants
-
----
-Task ID: 3
-Agent: full-stack-developer subagent (3 parallel)
-Task: Build frontend (storefront, admin, POS)
-
-Work Log:
-- Built public storefront: Homepage, Catalog, Product Detail, Order Form
-- Built admin dashboard: Login, Dashboard, Products, Orders, Store Sales, Ecotrack Settings
-- Built POS interface: Search, Cart, Checkout, Receipt generation
-- Applied Kabyle-themed design with warm colors and Berber patterns
-
-Stage Summary:
-- Complete frontend with 3 interfaces (public, admin, POS)
-- All pages responsive and functional
-- Professional design with Kabyle aesthetic
-
----
-Task ID: 4
-Agent: Main
-Task: Bug fixes, image generation, and final verification
-
-Work Log:
-- Fixed color selector bug on product detail page
-- Generated custom logo and banner images
-- Updated Navbar with logo image
-- Updated homepage hero with banner image
-- Comprehensive browser verification: 10/10 features passing
-
-Stage Summary:
-- All features verified working correctly
-- No critical bugs remaining
-- Application is production-ready
+- Boutique rebranded to "Robe Kabyle Kenza" with correct contact info
+- Admin products now use URL input instead of file upload (supports Instagram URLs)
+- Order form includes delivery type selector (Livraison à domicile vs Stop Desk)
+- Shipping rates available for all 58 wilayas (home + stop desk pricing)
+- Instagram page inaccessible for scraping (JS-rendered), generated AI product photos instead

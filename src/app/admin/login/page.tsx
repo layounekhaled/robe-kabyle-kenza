@@ -50,7 +50,7 @@ export default function AdminLoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
             <ShoppingBag className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Boutique Robes Kabyles</h1>
+          <h1 className="text-2xl font-bold text-foreground">Robe Kabyle Kenza</h1>
           <p className="text-muted-foreground mt-1">Administration</p>
           <div className="berber-border-top mt-4 mx-auto w-48" />
         </div>
@@ -125,7 +125,7 @@ export default function AdminLoginPage() {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Boutique Robes Kabyles &copy; {new Date().getFullYear()}
+          Robe Kabyle Kenza &copy; {new Date().getFullYear()}
         </p>
       </div>
     </div>

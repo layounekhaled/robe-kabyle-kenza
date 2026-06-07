@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://dzbuild.com/docs/couriers/ecotrack",
+    "name": "EcoTrack - DZBuild",
+    "snippet": "EcoTrack is a shared shipping API that powers a large family of Algerian couriers. Picking the right slug in DZBuild lets you authenticate with a single bearer ...",
+    "host_name": "dzbuild.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.ecotrack.dz",
+    "name": "https://www.ecotrack.dz/",
+    "snippet": "No information is available for this page. · Learn why",
+    "host_name": "www.ecotrack.dz",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://github.com/PiteurStudio/CourierDZ",
+    "name": "CourierDZ is a PHP client designed to simplify the integration of",
+    "snippet": "CourierDZ is a PHP client designed to simplify the integration of Algerian shipping providers into your applications. Whether you're working on an ...",
+    "host_name": "github.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.facebook.com/groups/algerianwp/posts/902330159033713",
+    "name": "Unified shipping api for algerian carriers - Facebook",
+    "snippet": "If you've ever had to integrate Yalidine, ZR, and Ecotrack into the same project, you know the struggle: different docs, different auth ...",
+    "host_name": "www.facebook.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.postman.com/api-evangelist/workspaces/documentation/vleu0k3/network",
+    "name": "Documentation | Workspaces | Postman API Network",
+    "snippet": "Sign in to use Postman Agent. · Getting Started · API Platform · Enterprise Solutions · Learning · Community and Events · Support.",
+    "host_name": "www.postman.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://documenter.getpostman.com/view/9513785/SW7Z3U84",
+    "name": "Courier API - Courier Specifics Documentation - Postman",
+    "snippet": "Each courier has slightly different requirements for the create-label request. View these samples to see the differences Please note: in the `parcels ...",
+    "host_name": "documenter.getpostman.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://fr.scribd.com/document/825596285/Documentation-Noest-New",
+    "name": "Spécifications API pour Ecotrack | PDF - Scribd",
+    "snippet": "Le document spécifie l'API d'ECOTRACK, détaillant les opérations pour ajouter, valider, supprimer, modifier des commandes, ainsi que pour télécharger des ...",
+    "host_name": "fr.scribd.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://apidocs-planner.dispatchtrack.com",
+    "name": "Planner API",
+    "snippet": "Planner's API will allow you to create and obtain information through a RESTful protocol. The lite version of the API will allow you to make 1,000 requests ...",
+    "host_name": "apidocs-planner.dispatchtrack.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://stopdesk.info",
+    "name": "Colitrack — Tous les Stopdesks de livraison en Algérie",
+    "snippet": "Sélectionnez votre société de livraison, parcourez les points de retrait par wilaya et accédez instantanément à l'adresse, au numéro et à la carte. 58. Wilayas ...",
+    "host_name": "stopdesk.info",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://developer.fedex.com/api/fr-gp/catalog/ship/docs.html",
+    "name": "Documentation sur l'API d'expédition | FedEx Developer Portal",
+    "snippet": "Avant d'utiliser les API FedEx, vous devriez d'abord vous familiariser avec les différents aspects des services FedExMD. Ces documents vous permettent ...",
+    "host_name": "developer.fedex.com",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

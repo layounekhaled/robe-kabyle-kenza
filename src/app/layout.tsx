@@ -11,7 +11,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Boutique Robes Kabyles - Robes Traditionnelles et Modernes",
+  title: "Robe Kabyle Kenza - Robes Traditionnelles et Modernes",
   description:
     "Découvrez notre collection de robes kabyles traditionnelles et modernes. Broderies artisanales, tissus de qualité, livraison partout en Algérie. Qualité artisanale kabyle.",
   keywords: [
@@ -25,21 +25,21 @@ export const metadata: Metadata = {
     "Tizi Ouzou",
     "Béjaïa",
   ],
-  authors: [{ name: "Boutique Robes Kabyles" }],
+  authors: [{ name: "Robe Kabyle Kenza" }],
   icons: {
     icon: "/logo.svg",
   },
   openGraph: {
-    title: "Boutique Robes Kabyles - Robes Traditionnelles et Modernes",
+    title: "Robe Kabyle Kenza - Robes Traditionnelles et Modernes",
     description:
       "Découvrez notre collection de robes kabyles traditionnelles et modernes. Broderies artisanales, tissus de qualité, livraison partout en Algérie.",
     type: "website",
     locale: "fr_DZ",
-    siteName: "Boutique Robes Kabyles",
+    siteName: "Robe Kabyle Kenza",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Boutique Robes Kabyles",
+    title: "Robe Kabyle Kenza",
     description:
       "Robes kabyles traditionnelles et modernes - Qualité artisanale",
   },

@@ -2,14 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getWilayas, getCommunes, calculateShipping } from "@/lib/ecotrack";
+import { getWilayas, getCommunes, calculateShipping, getShippingRates, getStopDesks } from "@/lib/ecotrack";
 
 /**
  * GET /api/ecotrack - Ecotrack API proxy
  * - No action param: Get ecotrack settings (admin)
  * - ?action=wilayas: Fetch wilayas (Ecotrack API → fallback DB locale)
  * - ?action=communes&wilayaId=X: Fetch communes (Ecotrack API → fallback DB locale)
- * - ?action=shipping&wilayaId=X: Calculate shipping
+ * - ?action=shipping&wilayaId=X: Calculate shipping (home + stop desk)
+ * - ?action=rates&wilayaId=X: Get shipping rates (home + stop desk prices)
+ * - ?action=stopdesk&wilayaId=X: Get stop desks for a wilaya
  */
 export async function GET(request: NextRequest) {
   try {
@@ -38,7 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Public actions: wilayas, communes, shipping (needed for storefront)
-    const publicActions = ["wilayas", "communes", "shipping"];
+    const publicActions = ["wilayas", "communes", "shipping", "rates", "stopdesk"];
 
     if (!publicActions.includes(action)) {
       const session = await getServerSession(authOptions);
@@ -118,14 +120,42 @@ export async function GET(request: NextRequest) {
           const shipping = await calculateShipping(parseInt(wilayaId));
           return NextResponse.json({ shipping });
         } catch {
-          // Fallback: return a default shipping cost based on wilaya code
+          // Fallback: return default shipping costs based on wilaya code
           const code = parseInt(wilayaId);
-          // Algérie: ~400 DA pour Alger, ~700 DA pour les autres wilayas
-          const defaultPrice = code === 16 ? 400 : 700;
+          const rates = await getShippingRates(code);
           return NextResponse.json({
-            shipping: { price: defaultPrice },
+            shipping: { price: rates.home, prix_domicile: rates.home, prix_stopdesk: rates.stopDesk },
             source: "fallback",
           });
+        }
+      }
+
+      case "rates": {
+        const wilayaId = searchParams.get("wilayaId");
+        if (!wilayaId) {
+          return NextResponse.json(
+            { error: "wilayaId est requis" },
+            { status: 400 }
+          );
+        }
+        const code = parseInt(wilayaId);
+        const rates = await getShippingRates(code);
+        return NextResponse.json({ rates });
+      }
+
+      case "stopdesk": {
+        const wilayaId = searchParams.get("wilayaId");
+        if (!wilayaId) {
+          return NextResponse.json(
+            { error: "wilayaId est requis" },
+            { status: 400 }
+          );
+        }
+        try {
+          const stopDesks = await getStopDesks(parseInt(wilayaId));
+          return NextResponse.json({ stopDesks });
+        } catch {
+          return NextResponse.json({ stopDesks: [] });
         }
       }
 
