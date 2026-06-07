@@ -52,3 +52,43 @@ prompt
 server.log
 # Skills directory
 /skills/
+
+# Large API/debug JSON files
+courierdz-*.json
+ecotrack-*.json
+dolivroo.json
+github-ecotrack.json
+instagram.json
+insta-search.json
+scribd-ecotrack.json
+dzbuild-ecotrack.json
+
+# Screenshots
+order-*.png
+
+# Upload directory
+/upload/
+
+# Agent context
+/agent-ctx/
+
+# Z scripts
+/.zscripts/
+
+# DB files (local SQLite)
+/db/
+
+# Download directory
+/download/
+
+# Mini services
+/mini-services/
+
+# Examples
+/examples/
+
+# Lock files (optional, large)
+bun.lock
+
+# Caddy config
+Caddyfile
