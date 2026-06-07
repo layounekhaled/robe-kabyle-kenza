@@ -1,6 +1,3 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -16,50 +13,38 @@ import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/store/Navbar";
 import Footer from "@/components/store/Footer";
 import ProductCard from "@/components/store/ProductCard";
+import { db } from "@/lib/db";
 
-interface ProductImage {
-  id: string;
-  url: string;
-  alt: string | null;
-  sortOrder: number;
-}
+export default async function HomePage() {
+  // Fetch featured products directly in the server component
+  const featuredProducts = await db.product.findMany({
+    where: {
+      featured: true,
+      active: true,
+    },
+    include: {
+      images: { orderBy: { sortOrder: "asc" } },
+      variants: true,
+    },
+    orderBy: { createdAt: "desc" },
+    take: 6,
+  });
 
-interface ProductVariant {
-  id: string;
-  size: string;
-  color: string;
-  stock: number;
-}
-
-interface Product {
-  id: string;
-  reference: string;
-  name: string;
-  price: number;
-  images: ProductImage[];
-  variants: ProductVariant[];
-}
-
-export default function HomePage() {
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadFeatured() {
-      try {
-        const res = await fetch("/api/products?featured=true&limit=6");
-        if (res.ok) {
-          const data = await res.json();
-          setFeaturedProducts(data.products || []);
-        }
-      } catch {
-        // silently fail
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadFeatured();
-  }, []);
+  // Serialize for client components (convert Date objects to strings)
+  const serializedProducts = featuredProducts.map((p) => ({
+    ...p,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+    images: p.images.map((img) => ({
+      ...img,
+      createdAt: img.createdAt.toISOString(),
+    })),
+    variants: p.variants.map((v) => ({
+      ...v,
+      createdAt: v.createdAt.toISOString(),
+      updatedAt: v.updatedAt.toISOString(),
+    })),
+  }));
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -164,27 +149,17 @@ export default function HomePage() {
               </p>
             </div>
 
-            {loading ? (
+            {serializedProducts.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-6">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="animate-pulse rounded-xl border bg-muted overflow-hidden"
-                  >
-                    <div className="aspect-[3/4] bg-muted" />
-                    <div className="p-4 space-y-3">
-                      <div className="h-3 w-16 bg-muted rounded" />
-                      <div className="h-4 w-3/4 bg-muted rounded" />
-                      <div className="h-6 w-24 bg-muted rounded" />
-                    </div>
-                  </div>
+                {serializedProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-6">
-                {featuredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">
+                  Aucun produit en vedette pour le moment.
+                </p>
               </div>
             )}
 
@@ -298,7 +273,7 @@ export default function HomePage() {
                 },
                 {
                   title: "Moderne",
-                  desc: "Tradition revisité",
+                  desc: "Tradition revisitée",
                   seed: "kabyle-moderne",
                   color: "from-kabyle-gold/80 to-kabyle-olive/80",
                 },
