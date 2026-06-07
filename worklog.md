@@ -79,3 +79,36 @@ Stage Summary:
 - Admin can sync Ecotrack tracking status via "Synchroniser" button
 - Ecotrack tracking numbers are saved to orders and displayed in admin
 - Full flow verified: storefront order → Ecotrack shipment → tracking number saved
+
+---
+Task ID: fix-products-display
+Agent: Main Agent
+Task: Convert homepage and catalog to Server Components for SSR product rendering (fix products not displaying on Vercel)
+
+Work Log:
+- Analyzed root cause: homepage (page.tsx) and catalog page (catalog/page.tsx) were "use client" components using useEffect to fetch data. SSR rendered skeleton placeholders, and client JS failed to hydrate/fetch on Vercel, leaving products invisible forever.
+- Converted homepage (src/app/page.tsx) from client component to async Server Component:
+  - Removed "use client" directive and all useState/useEffect for data fetching
+  - Added direct Prisma query: `db.product.findMany({ where: { featured: true, active: true } })` with images and variants included
+  - Removed loading/skeleton state entirely - products render directly from SSR
+  - Serialized Date objects to ISO strings for client component compatibility
+- Split catalog page (src/app/catalog/page.tsx) into server + client components:
+  - Created CatalogClient.tsx (src/components/store/CatalogClient.tsx) as "use client" component with all interactive filter/search/pagination logic
+  - Catalog page now a Server Component that fetches initial products via Prisma and passes them as props to CatalogClient
+  - CatalogClient initializes with server-fetched data (no loading flash on first render), only shows loading skeleton when filters change
+  - Added hasFilterChanges tracking to avoid re-fetching on initial load
+- Kept ProductCard.tsx as "use client" component (unchanged)
+- Lint check passed with no errors
+- Committed and pushed to GitHub (commit 02c3c8f)
+- Triggered Vercel production deployment via API
+- Verified deployment:
+  - API endpoint /api/products?featured=true&limit=6 returns 6 products ✓
+  - Homepage HTML contains "Favorites" section, product cards ("Voir détails"), no animate-pulse ✓
+  - Catalog page HTML contains product cards, "Catalogue" header, no animate-pulse ✓
+
+Stage Summary:
+- Homepage now renders featured products during SSR via Prisma, no client-side fetch needed
+- Catalog page renders initial products during SSR, client-side fetch only for filter changes
+- Products display correctly on first render on Vercel - no more stuck skeleton placeholders
+- Same visual design preserved (Kabyle terracotta/gold/olive theme)
+- Commit: 02c3c8fb8eed1dc40b16295e4d5245c6ff8bfc4b
