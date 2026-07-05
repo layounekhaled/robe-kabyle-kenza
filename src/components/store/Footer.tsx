@@ -102,7 +102,7 @@ export default function Footer() {
 
         <div className="mt-10 pt-6 border-t border-white/10 text-center text-xs text-white/50">
           © {new Date().getFullYear()} Robe Kabyle Kenza. Tous droits
-          réservés. Fait avec ❤ en Kabylie.
+          réservés. Site développé par <a href="https://fret.direct" target="_blank" rel="noopener noreferrer" className="text-kabyle-gold hover:underline">FRET.DIRECT</a>.
         </div>
       </div>
     </footer>
