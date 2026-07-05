@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Ecotrack API error:", error);
     return NextResponse.json(
-      { error: "Erreur lors de la communication avec Ecotrack" },
+      { error: "Erreur lors de la communication avec FRET.DIRECT" },
       { status: 500 }
     );
   }
@@ -239,7 +239,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error("Error updating ecotrack settings:", error);
     return NextResponse.json(
-      { error: "Erreur lors de la mise à jour des paramètres Ecotrack" },
+      { error: "Erreur lors de la mise à jour des paramètres FRET.DIRECT" },
       { status: 500 }
     );
   }

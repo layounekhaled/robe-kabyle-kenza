@@ -218,7 +218,7 @@ export default async function HomePage() {
                     Livraison Rapide
                   </h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Livraison partout en Algérie via Ecotrack. Suivez votre
+                    Livraison partout en Algérie via <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="text-kabyle-gold hover:underline font-semibold">FRET.DIRECT</a>. Suivez votre
                     commande en temps réel et recevez votre robe chez vous en
                     toute sécurité.
                   </p>

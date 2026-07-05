@@ -187,14 +187,14 @@ export async function PUT(
           }
         } else {
           return NextResponse.json(
-            { error: "Ecotrack n'est pas configuré. Veuillez d'abord configurer les paramètres Ecotrack." },
+            { error: "FRET.DIRECT n'est pas configuré. Veuillez d'abord configurer les paramètres FRET.DIRECT." },
             { status: 400 }
           );
         }
       } catch (ecotrackError) {
         console.error("Failed to create Ecotrack shipment:", ecotrackError);
         return NextResponse.json(
-          { error: `Erreur Ecotrack: ${ecotrackError instanceof Error ? ecotrackError.message : "Erreur inconnue"}` },
+          { error: `Erreur FRET.DIRECT: ${ecotrackError instanceof Error ? ecotrackError.message : "Erreur inconnue"}` },
           { status: 500 }
         );
       }

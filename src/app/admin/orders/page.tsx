@@ -194,15 +194,15 @@ export default function OrdersPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        toast.success('Commande envoyée vers Ecotrack avec succès !');
+        toast.success('Commande envoyée vers FRET.DIRECT avec succès !');
         setSelectedOrder(data.order);
         fetchOrders(pagination.page);
       } else {
         const data = await res.json();
-        toast.error(data.error || 'Erreur lors de l\'envoi vers Ecotrack');
+        toast.error(data.error || 'Erreur lors de l\'envoi vers FRET.DIRECT');
       }
     } catch {
-      toast.error('Erreur de connexion lors de l\'envoi vers Ecotrack');
+      toast.error('Erreur de connexion lors de l\'envoi vers FRET.DIRECT');
     } finally {
       setSendingToEcotrack(false);
     }
@@ -218,7 +218,7 @@ export default function OrdersPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        toast.success('Statut Ecotrack synchronisé');
+        toast.success('Statut FRET.DIRECT synchronisé');
         setSelectedOrder(data.order);
         fetchOrders(pagination.page);
       } else {
@@ -291,7 +291,7 @@ export default function OrdersPage() {
                       <TableHead className="hidden lg:table-cell">Wilaya</TableHead>
                       <TableHead>Montant</TableHead>
                       <TableHead>Statut</TableHead>
-                      <TableHead className="hidden sm:table-cell">Ecotrack</TableHead>
+                      <TableHead className="hidden sm:table-cell"><a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="hover:underline">FRET.DIRECT</a></TableHead>
                       <TableHead className="hidden sm:table-cell">Date</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -501,7 +501,7 @@ export default function OrdersPage() {
                 <div className="space-y-4">
                   <h4 className="font-semibold text-sm flex items-center gap-2">
                     <Truck className="h-4 w-4" />
-                    Expédition Ecotrack
+                    Expédition <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a>
                   </h4>
 
                   {selectedOrder.ecotrackTracking ? (
@@ -511,7 +511,7 @@ export default function OrdersPage() {
                         <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
                         <div className="flex-1">
                           <p className="text-sm font-medium text-green-800">
-                            Colis envoyé vers Ecotrack
+                            Colis envoyé vers <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="hover:underline">FRET.DIRECT</a>
                           </p>
                           <p className="text-xs text-green-600 mt-0.5">
                             N° de suivi : <span className="font-mono font-bold">{selectedOrder.ecotrackTracking}</span>
@@ -522,7 +522,7 @@ export default function OrdersPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                         {selectedOrder.ecotrackId && (
                           <div className="flex items-center gap-2 text-muted-foreground">
-                            <span className="text-xs">ID Ecotrack:</span>
+                            <span className="text-xs">ID FRET.DIRECT:</span>
                             <span className="font-mono text-xs">{selectedOrder.ecotrackId}</span>
                           </div>
                         )}
@@ -550,7 +550,7 @@ export default function OrdersPage() {
                         ) : (
                           <>
                             <RefreshCw className="mr-2 h-4 w-4" />
-                            Synchroniser le statut Ecotrack
+                            Synchroniser le statut <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="hover:underline">FRET.DIRECT</a>
                           </>
                         )}
                       </Button>
@@ -562,7 +562,7 @@ export default function OrdersPage() {
                         <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
                         <div className="flex-1">
                           <p className="text-sm font-medium text-amber-800">
-                            Pas encore envoyé vers Ecotrack
+                            Pas encore envoyé vers <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="hover:underline">FRET.DIRECT</a>
                           </p>
                           <p className="text-xs text-amber-600 mt-0.5">
                             Cliquez sur le bouton ci-dessous pour créer l&apos;expédition
@@ -578,12 +578,12 @@ export default function OrdersPage() {
                         {sendingToEcotrack ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Envoi en cours vers Ecotrack...
+                            Envoi en cours vers FRET.DIRECT...
                           </>
                         ) : (
                           <>
                             <Send className="mr-2 h-4 w-4" />
-                            Envoyer vers Ecotrack
+                            Envoyer vers <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="hover:underline">FRET.DIRECT</a>
                           </>
                         )}
                       </Button>

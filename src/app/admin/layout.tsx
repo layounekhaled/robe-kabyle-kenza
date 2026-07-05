@@ -32,7 +32,7 @@ const navItems = [
   { href: '/admin/products', label: 'Produits', icon: Package },
   { href: '/admin/orders', label: 'Commandes', icon: ShoppingCart },
   { href: '/admin/store-sales', label: 'Ventes Magasin', icon: Store },
-  { href: '/admin/ecotrack', label: 'Paramètres Ecotrack', icon: Settings },
+  { href: '/admin/ecotrack', label: 'Paramètres FRET.DIRECT', icon: Settings },
 ];
 
 export default function AdminLayout({

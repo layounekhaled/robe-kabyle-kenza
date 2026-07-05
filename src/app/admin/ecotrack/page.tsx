@@ -90,7 +90,7 @@ export default function EcotrackPage() {
         setSettings(data.settings);
         setTokenChanged(false);
         setFormApiToken('');
-        toast.success('Paramètres Ecotrack mis à jour avec succès');
+        toast.success('Paramètres FRET.DIRECT mis à jour avec succès');
         fetchSettings();
       } else {
         const data = await res.json();
@@ -116,21 +116,21 @@ export default function EcotrackPage() {
           success: true,
           message: `Connexion réussie ! ${count} wilayas chargées.`,
         });
-        toast.success(`Connexion Ecotrack réussie - ${count} wilayas`);
+        toast.success(`Connexion FRET.DIRECT réussie - ${count} wilayas`);
       } else {
         const data = await res.json();
         setTestResult({
           success: false,
-          message: data.error || 'Erreur de connexion à l\'API Ecotrack',
+          message: data.error || 'Erreur de connexion à l\'API FRET.DIRECT',
         });
-        toast.error('Échec de la connexion à Ecotrack');
+        toast.error('Échec de la connexion à FRET.DIRECT');
       }
     } catch {
       setTestResult({
         success: false,
-        message: 'Impossible de se connecter au serveur Ecotrack',
+        message: 'Impossible de se connecter au serveur FRET.DIRECT',
       });
-      toast.error('Impossible de se connecter à Ecotrack');
+      toast.error('Impossible de se connecter à FRET.DIRECT');
     } finally {
       setTesting(false);
     }
@@ -158,8 +158,8 @@ export default function EcotrackPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold">Paramètres Ecotrack</h2>
-        <p className="text-muted-foreground">Configuration de l&apos;intégration Ecotrack pour la livraison</p>
+        <h2 className="text-2xl font-bold">Paramètres <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a></h2>
+        <p className="text-muted-foreground">Configuration de l&apos;intégration <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a> pour la livraison</p>
       </div>
 
       {/* Connection Status */}
@@ -224,7 +224,7 @@ export default function EcotrackPage() {
             Configuration API
           </CardTitle>
           <CardDescription>
-            Entrez vos identifiants API Ecotrack pour activer la livraison
+            Entrez vos identifiants API <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a> pour activer la livraison
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -241,7 +241,7 @@ export default function EcotrackPage() {
               onChange={(e) => setFormApiUrl(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              L&apos;URL de base de l&apos;API Ecotrack
+              L&apos;URL de base de l&apos;API <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a>
             </p>
           </div>
 
@@ -264,7 +264,7 @@ export default function EcotrackPage() {
             <p className="text-xs text-muted-foreground">
               {settings?.hasToken
                 ? 'Un token est déjà configuré. Laissez vide pour le conserver.'
-                : 'Votre clé API Ecotrack'}
+                : 'Votre clé API FRET.DIRECT'}
             </p>
           </div>
 
@@ -273,7 +273,7 @@ export default function EcotrackPage() {
           {/* Active Toggle */}
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label>Activer l&apos;intégration Ecotrack</Label>
+              <Label>Activer l&apos;intégration <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a></Label>
               <p className="text-xs text-muted-foreground">
                 Active ou désactive la création automatique d&apos;expéditions
               </p>
@@ -327,11 +327,11 @@ export default function EcotrackPage() {
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
           <p>
-            <strong>Ecotrack</strong> est un service de livraison en Algérie qui permet d&apos;expédier
+            <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">FRET.DIRECT</a> est un service de livraison en Algérie qui permet d&apos;expédier
             des colis vers toutes les wilayas.
           </p>
           <p>
-            Lorsqu&apos;une commande passe au statut &quot;Confirmée&quot;, une expédition Ecotrack est
+            Lorsqu&apos;une commande passe au statut &quot;Confirmée&quot;, une expédition <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a> est
             automatiquement créée si l&apos;intégration est active et configurée.
           </p>
           <p>
