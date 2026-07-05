@@ -95,6 +95,53 @@ export async function GET(request: NextRequest) {
 }
 
 /**
+ * DELETE /api/products - Bulk delete products (admin only)
+ * Body: { ids: string[] }
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user as { role: string }).role !== "admin") {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { ids } = body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json(
+        { error: "Veuillez fournir une liste d'IDs de produits à supprimer" },
+        { status: 400 }
+      );
+    }
+
+    await db.$transaction(async (tx) => {
+      // Delete order items referencing these products
+      await tx.orderItem.deleteMany({ where: { productId: { in: ids } } });
+      // Delete store sale items referencing these products
+      await tx.storeSaleItem.deleteMany({ where: { productId: { in: ids } } });
+      // Delete product images
+      await tx.productImage.deleteMany({ where: { productId: { in: ids } } });
+      // Delete product variants
+      await tx.productVariant.deleteMany({ where: { productId: { in: ids } } });
+      // Delete the products
+      await tx.product.deleteMany({ where: { id: { in: ids } } });
+    });
+
+    return NextResponse.json({
+      message: `${ids.length} produit${ids.length > 1 ? 's' : ''} supprimé${ids.length > 1 ? 's' : ''} avec succès`,
+      deletedCount: ids.length,
+    });
+  } catch (error) {
+    console.error("Error bulk deleting products:", error);
+    return NextResponse.json(
+      { error: "Erreur lors de la suppression des produits" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * POST /api/products - Create a new product (admin only)
  */
 export async function POST(request: NextRequest) {

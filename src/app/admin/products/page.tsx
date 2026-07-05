@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -93,14 +94,21 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
   // Dialog states
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Delete state
+  // Delete state (single)
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Bulk delete state
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // Form state
   const [formReference, setFormReference] = useState('');
@@ -129,6 +137,7 @@ export default function ProductsPage() {
         const data = await res.json();
         setProducts(data.products);
         setPagination(data.pagination);
+        setSelectedIds(new Set()); // Clear selection on new data
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -140,6 +149,30 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchProducts(1);
   }, [fetchProducts]);
+
+  // Selection helpers
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === products.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(products.map((p) => p.id)));
+    }
+  };
+
+  const allSelected = products.length > 0 && selectedIds.size === products.length;
+  const someSelected = selectedIds.size > 0 && !allSelected;
 
   const openCreateDialog = () => {
     setEditProduct(null);
@@ -248,6 +281,33 @@ export default function ProductsPage() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    try {
+      setBulkDeleting(true);
+      const res = await fetch('/api/products', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(data.message || `${selectedIds.size} produits supprimés avec succès`);
+        setSelectedIds(new Set());
+        setBulkDeleteOpen(false);
+        fetchProducts(pagination.page);
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Erreur lors de la suppression');
+      }
+    } catch {
+      toast.error('Erreur lors de la suppression multiple');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   const addImageUrl = () => {
     const url = imageUrlInput.trim();
     if (!url) {
@@ -295,10 +355,22 @@ export default function ProductsPage() {
           <h2 className="text-2xl font-bold">Produits</h2>
           <p className="text-muted-foreground">{pagination.total} produits au total</p>
         </div>
-        <Button onClick={openCreateDialog} className="bg-primary hover:bg-primary/90">
-          <Plus className="mr-2 h-4 w-4" />
-          Ajouter un produit
-        </Button>
+        <div className="flex items-center gap-2">
+          {selectedIds.size > 0 && (
+            <Button
+              variant="destructive"
+              onClick={() => setBulkDeleteOpen(true)}
+              className="shrink-0"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Supprimer ({selectedIds.size})
+            </Button>
+          )}
+          <Button onClick={openCreateDialog} className="bg-primary hover:bg-primary/90">
+            <Plus className="mr-2 h-4 w-4" />
+            Ajouter un produit
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -311,6 +383,23 @@ export default function ProductsPage() {
           className="pl-10"
         />
       </div>
+
+      {/* Selection info bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 rounded-lg border">
+          <span className="text-sm font-medium">
+            {selectedIds.size} produit{selectedIds.size > 1 ? 's' : ''} sélectionné{selectedIds.size > 1 ? 's' : ''}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-7"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            Tout désélectionner
+          </Button>
+        </div>
+      )}
 
       {/* Products Table */}
       <Card>
@@ -333,6 +422,17 @@ export default function ProductsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={allSelected}
+                          ref={(el) => {
+                            if (el) {
+                              (el as HTMLButtonElement & { indeterminate?: boolean }).indeterminate = someSelected;
+                            }
+                          }}
+                          onCheckedChange={toggleSelectAll}
+                        />
+                      </TableHead>
                       <TableHead className="w-16">Image</TableHead>
                       <TableHead>Référence</TableHead>
                       <TableHead>Nom</TableHead>
@@ -344,7 +444,16 @@ export default function ProductsPage() {
                   </TableHeader>
                   <TableBody>
                     {products.map((product) => (
-                      <TableRow key={product.id}>
+                      <TableRow
+                        key={product.id}
+                        className={selectedIds.has(product.id) ? 'bg-muted/50' : ''}
+                      >
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedIds.has(product.id)}
+                            onCheckedChange={() => toggleSelect(product.id)}
+                          />
+                        </TableCell>
                         <TableCell>
                           {product.images[0] ? (
                             <img
@@ -662,7 +771,7 @@ export default function ProductsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
+      {/* Single Delete Confirmation */}
       <AlertDialog open={!!deleteProduct} onOpenChange={() => setDeleteProduct(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -686,6 +795,36 @@ export default function ProductsPage() {
                 </>
               ) : (
                 'Supprimer'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer {selectedIds.size} produit{selectedIds.size > 1 ? 's' : ''}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer {selectedIds.size} produit{selectedIds.size > 1 ? 's' : ''} ?
+              Cette action est irréversible. Les produits et toutes leurs données associées (images, variantes, etc.) seront définitivement supprimés.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={bulkDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {bulkDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                `Supprimer ${selectedIds.size} produit${selectedIds.size > 1 ? 's' : ''}`
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
