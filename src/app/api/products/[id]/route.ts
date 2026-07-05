@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { initDb } from "@/lib/init-db";
 
 /**
  * GET /api/products/[id] - Get single product with images and variants
@@ -11,6 +12,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await initDb();
     const { id } = await params;
     const session = await getServerSession(authOptions);
     const isAdmin = session?.user?.role === "admin" || session?.user?.role === "cashier";
@@ -53,6 +55,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await initDb();
     const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session || (session.user as { role: string }).role !== "admin") {
@@ -134,6 +137,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await initDb();
     const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session || (session.user as { role: string }).role !== "admin") {

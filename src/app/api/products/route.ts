@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { initDb } from "@/lib/init-db";
 
 /**
  * GET /api/products - List products with optional filters
@@ -9,6 +10,7 @@ import { db } from "@/lib/db";
  */
 export async function GET(request: NextRequest) {
   try {
+    await initDb();
     const { searchParams } = new URL(request.url);
     const session = await getServerSession(authOptions);
     const isAdmin = session?.user?.role === "admin" || session?.user?.role === "cashier";
@@ -100,6 +102,7 @@ export async function GET(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
+    await initDb();
     const session = await getServerSession(authOptions);
     if (!session || (session.user as { role: string }).role !== "admin") {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
@@ -146,6 +149,7 @@ export async function DELETE(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    await initDb();
     const session = await getServerSession(authOptions);
     if (!session || (session.user as { role: string }).role !== "admin") {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });

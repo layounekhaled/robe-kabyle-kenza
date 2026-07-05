@@ -6,13 +6,9 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// For Vercel serverless: use /tmp for SQLite (writable at runtime)
-// For local dev: use the standard prisma/db/ path
+// Always use SQLite - force the correct path regardless of DATABASE_URL env var
 function getDatabaseUrl(): string {
-  // If DATABASE_URL is explicitly set, use it
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL
-
-  // On Vercel (serverless), copy DB to /tmp for read/write access
+  // On Vercel (serverless), use /tmp for SQLite (writable at runtime)
   if (process.env.VERCEL) {
     const tmpDbPath = '/tmp/custom.db'
     const sourceDbPath = path.join(process.cwd(), 'prisma', 'db', 'custom.db')
@@ -22,22 +18,26 @@ function getDatabaseUrl(): string {
       try {
         if (fs.existsSync(sourceDbPath)) {
           fs.copyFileSync(sourceDbPath, tmpDbPath)
+          console.log('📦 Copied DB to /tmp for Vercel serverless')
+        } else {
+          console.log('📦 No source DB found, will be created by seed')
         }
       } catch (e) {
-        // DB might not exist yet, will be created by db push
+        console.error('Failed to copy DB to /tmp:', e)
       }
     }
 
     return `file:${tmpDbPath}`
   }
 
-  // Default: relative path from prisma directory
+  // Local development: use the standard prisma/db/ path
   return 'file:./db/custom.db'
 }
 
 const databaseUrl = getDatabaseUrl()
 
-// Set DATABASE_URL env var so Prisma picks it up
+// CRITICAL: Override DATABASE_URL env var so Prisma uses our SQLite path
+// This is needed because Vercel may have a PostgreSQL DATABASE_URL set
 process.env.DATABASE_URL = databaseUrl
 
 export const db =
@@ -53,12 +53,13 @@ let _seeded = false
 export async function ensureSeeded() {
   if (_seeded) return
   try {
+    // Ensure DATABASE_URL points to our SQLite
+    process.env.DATABASE_URL = databaseUrl
+
     const count = await db.product.count()
     if (count === 0) {
       console.log('🌱 Auto-seeding database (serverless cold start)...')
       const { execSync } = await import('child_process')
-      // Set DATABASE_URL for the seed script too
-      process.env.DATABASE_URL = databaseUrl
       execSync('node scripts/seed.mjs', {
         stdio: 'inherit',
         env: { ...process.env, DATABASE_URL: databaseUrl }
