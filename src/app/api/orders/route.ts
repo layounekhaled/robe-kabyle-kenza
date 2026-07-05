@@ -52,10 +52,10 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { orderNumber: { contains: search } },
-        { customer: { name: { contains: search } } },
+        { orderNumber: { contains: search, mode: 'insensitive' } },
+        { customer: { name: { contains: search, mode: 'insensitive' } } },
         { customer: { phone: { contains: search } } },
-        { ecotrackTracking: { contains: search } },
+        { ecotrackTracking: { contains: search, mode: 'insensitive' } },
       ];
     }
 

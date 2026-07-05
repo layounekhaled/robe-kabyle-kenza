@@ -1,0 +1,10 @@
+-- DropIndex
+DROP INDEX IF EXISTS "ProductImage_productId_idx";
+-- DropIndex
+DROP INDEX IF EXISTS "ProductVariant_productId_idx";
+-- DropIndex
+DROP INDEX IF EXISTS "OrderItem_orderId_idx";
+-- DropIndex
+DROP INDEX IF EXISTS "StoreSaleItem_saleId_idx";
+-- DropIndex
+DROP INDEX IF EXISTS "Commune_wilayaId_idx";
