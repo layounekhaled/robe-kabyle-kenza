@@ -11,6 +11,9 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://robe-kabyle-kenza.vercel.app"
+  ),
   title: "Robe Kabyle Kenza - Robes Traditionnelles et Modernes",
   description:
     "Découvrez notre collection de robes kabyles traditionnelles et modernes. Broderies artisanales, tissus de qualité, livraison partout en Algérie. Qualité artisanale kabyle.",
@@ -41,6 +44,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "fr_DZ",
     siteName: "Robe Kabyle Kenza",
+    images: [
+      {
+        url: "/logo-kabyle.png",
+        width: 1254,
+        height: 1254,
+        alt: "Robe Kabyle Kenza",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",

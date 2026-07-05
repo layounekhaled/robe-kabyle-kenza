@@ -135,3 +135,30 @@ Stage Summary:
 - When admin changes status to "shipped", the system now attempts the update AND fetches the real status
 - Admin gets a warning toast if Ecotrack status needs manual validation
 - Sync Ecotrack now uses the more accurate get/orders endpoint with process_state_id
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Add logo and favicon to the application + verify Ecotrack fixes
+
+Work Log:
+- Explored project structure to find existing logo files: logo-kabyle.png (1254x1254), logo.png, logo.svg
+- Confirmed Navbar and Footer already use logo-kabyle.png for the brand logo
+- Generated favicon files from logo-kabyle.png using Pillow:
+  - favicon.ico (16x16, 32x32, 48x48 multi-size ICO)
+  - favicon-32x32.png (32x32)
+  - apple-icon.png (180x180)
+  - icon.png (512x512)
+- Updated layout.tsx with metadataBase for proper social image resolution
+- Added OpenGraph image configuration using logo-kabyle.png
+- Verified Ecotrack fixes from previous session:
+  - Orders created as type_id=1 (Livraison) - confirmed working
+  - validateEcotrackExpedition() function using POST /api/v1/valid/order - already implemented
+  - Expedition validation triggered when status changes to "shipped" - confirmed working
+- Build successful with no warnings
+
+Stage Summary:
+- Favicon and all icon files regenerated from the actual logo-kabyle.png
+- OpenGraph metadata now includes logo image for social sharing
+- metadataBase set for proper URL resolution
+- Both Ecotrack fixes confirmed working: order type=1 (Livraison) and expedition validation
