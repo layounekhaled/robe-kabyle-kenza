@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { deleteMultipleImages, isSupabaseUrl } from "@/lib/supabase-storage";
 
 /**
  * GET /api/products/[id] - Get single product with images and variants
@@ -47,6 +48,8 @@ export async function GET(
 
 /**
  * PUT /api/products/[id] - Update product (admin only)
+ * 
+ * When images are updated, detects removed images and deletes them from Supabase Storage.
  */
 export async function PUT(
   request: NextRequest,
@@ -62,7 +65,10 @@ export async function PUT(
     const body = await request.json();
     const { name, description, price, fabric, featured, active, images, variants } = body;
 
-    const existing = await db.product.findUnique({ where: { id } });
+    const existing = await db.product.findUnique({
+      where: { id },
+      include: { images: true },
+    });
     if (!existing) {
       return NextResponse.json(
         { error: "Produit non trouvé" },
@@ -79,8 +85,16 @@ export async function PUT(
     if (featured !== undefined) updateData.featured = featured;
     if (active !== undefined) updateData.active = active;
 
-    // Update images if provided - delete existing and recreate
+    // Update images if provided - detect removed images for Supabase cleanup
     if (images !== undefined) {
+      // Find images that are being removed (present in existing but not in new list)
+      const newUrls = new Set(images.map((img: { url: string }) => img.url));
+      const removedImages = existing.images.filter(img => !newUrls.has(img.url));
+      const removedSupabaseUrls = removedImages
+        .map(img => img.url)
+        .filter(url => isSupabaseUrl(url));
+
+      // Delete existing images from DB and recreate
       await db.productImage.deleteMany({ where: { productId: id } });
       updateData.images = {
         create: images.map(
@@ -91,6 +105,13 @@ export async function PUT(
           })
         ),
       };
+
+      // Clean up removed images from Supabase Storage (non-blocking)
+      if (removedSupabaseUrls.length > 0) {
+        deleteMultipleImages(removedSupabaseUrls).catch(err => {
+          console.error("[STORAGE] Failed to delete removed images from Supabase:", err);
+        });
+      }
     }
 
     // Update variants if provided - delete existing and recreate
@@ -128,6 +149,7 @@ export async function PUT(
 
 /**
  * DELETE /api/products/[id] - Hard delete product (admin only)
+ * Also removes associated images from Supabase Storage.
  */
 export async function DELETE(
   request: NextRequest,
@@ -140,7 +162,10 @@ export async function DELETE(
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const existing = await db.product.findUnique({ where: { id } });
+    const existing = await db.product.findUnique({
+      where: { id },
+      include: { images: true },
+    });
     if (!existing) {
       return NextResponse.json(
         { error: "Produit non trouvé" },
@@ -148,20 +173,26 @@ export async function DELETE(
       );
     }
 
-    // Hard delete - remove product and all related data (images, variants, order items)
-    // OrderItems reference the product, so we need to handle them
+    // Collect Supabase image URLs before deleting from DB
+    const supabaseUrls = existing.images
+      .map(img => img.url)
+      .filter(url => isSupabaseUrl(url));
+
+    // Hard delete - remove product and all related data
     await db.$transaction(async (tx) => {
-      // Delete order items referencing this product first
       await tx.orderItem.deleteMany({ where: { productId: id } });
-      // Delete store sale items referencing this product
       await tx.storeSaleItem.deleteMany({ where: { productId: id } });
-      // Delete product images
       await tx.productImage.deleteMany({ where: { productId: id } });
-      // Delete product variants
       await tx.productVariant.deleteMany({ where: { productId: id } });
-      // Finally delete the product itself
       await tx.product.delete({ where: { id } });
     });
+
+    // Clean up Supabase Storage images (non-blocking)
+    if (supabaseUrls.length > 0) {
+      deleteMultipleImages(supabaseUrls).catch(err => {
+        console.error("[STORAGE] Failed to delete product images from Supabase:", err);
+      });
+    }
 
     return NextResponse.json({ message: "Produit supprimé avec succès" });
   } catch (error) {

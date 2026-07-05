@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import OptimizedImage from "@/components/ui/optimized-image";
 import { cn } from "@/lib/utils";
 
 interface ProductImage {
@@ -72,12 +72,14 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Image */}
       <Link href={`/product/${product.id}`} className="block">
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-          <Image
+          <OptimizedImage
             src={imageUrl}
             alt={imageAlt}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover transition-transform duration-500 group-hover:scale-110"
+            useThumbnail
+            fallbackSrc="/logo-kabyle.png"
           />
 
           {/* Stock indicator overlay */}

@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { uploadImage, validateImageFile, deleteImage, isSupabaseUrl } from "@/lib/supabase-storage";
+import { isSupabaseConfigured } from "@/lib/supabase";
 
 /**
- * POST /api/images - Handle image upload
- * Saves to /public/uploads/ and returns the URL
+ * POST /api/images - Upload image(s) to Supabase Storage
+ * 
+ * Accepts FormData with:
+ * - file: Single file upload
+ * - files: Multiple files upload
+ * 
+ * Returns: { url, path, name, size, type } for single upload
+ *          { results: [...] } for multiple upload
  */
 export async function POST(request: NextRequest) {
   try {
@@ -15,66 +21,132 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const formData = await request.formData();
-    const file = formData.get("file") as File | null;
+    // Check if Supabase is configured
+    if (!isSupabaseConfigured()) {
+      return NextResponse.json(
+        { error: "Supabase n'est pas configuré. Vérifiez les variables d'environnement NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY." },
+        { status: 503 }
+      );
+    }
 
-    if (!file) {
+    const formData = await request.formData();
+
+    // Check for multiple files upload
+    const files: File[] = [];
+    const singleFile = formData.get("file") as File | null;
+    
+    if (singleFile) {
+      files.push(singleFile);
+    }
+
+    // Also check for multiple files via "files" key
+    const formDataEntries = formData.getAll("files");
+    for (const entry of formDataEntries) {
+      if (entry instanceof File) {
+        files.push(entry);
+      }
+    }
+
+    if (files.length === 0) {
       return NextResponse.json(
         { error: "Aucun fichier fourni" },
         { status: 400 }
       );
     }
 
-    // Validate file type
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-      "image/gif",
-    ];
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: "Type de fichier non autorisé. Utilisez JPG, PNG, WebP ou GIF." },
-        { status: 400 }
-      );
+    // Upload each file
+    const results = [];
+    for (const file of files) {
+      // Validate
+      const validation = validateImageFile(file);
+      if (!validation.valid) {
+        results.push({
+          success: false,
+          url: null,
+          path: null,
+          error: validation.error,
+          name: file.name,
+        });
+        continue;
+      }
+
+      // Upload to Supabase
+      const result = await uploadImage(file);
+      results.push({
+        ...result,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      });
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: "Le fichier est trop volumineux. Maximum 5MB." },
-        { status: 400 }
-      );
+    // Single file upload — return single result
+    if (files.length === 1 && singleFile) {
+      const result = results[0];
+      if (!result.success) {
+        return NextResponse.json(
+          { error: result.error },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json({
+        url: result.url,
+        path: result.path,
+        name: result.name,
+        size: result.size,
+        type: result.type,
+      }, { status: 201 });
     }
 
-    // Generate unique filename
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const ext = path.extname(file.name) || ".jpg";
-    const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}${ext}`;
-
-    // Ensure uploads directory exists
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadsDir, { recursive: true });
-
-    // Write file
-    const filePath = path.join(uploadsDir, uniqueName);
-    await writeFile(filePath, buffer);
-
-    const url = `/uploads/${uniqueName}`;
-
-    return NextResponse.json({
-      url,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-    }, { status: 201 });
+    // Multiple files — return array
+    return NextResponse.json({ results }, { status: 201 });
   } catch (error) {
     console.error("Error uploading image:", error);
     return NextResponse.json(
       { error: "Erreur lors de l'upload de l'image" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/images - Delete an image from Supabase Storage
+ * 
+ * Body: { url: string }
+ * Returns: { success: boolean }
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user as { role: string }).role !== "admin") {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    }
+
+    const { url } = await request.json();
+
+    if (!url) {
+      return NextResponse.json(
+        { error: "URL requise" },
+        { status: 400 }
+      );
+    }
+
+    // Only delete from Supabase Storage if it's a Supabase URL
+    if (isSupabaseUrl(url)) {
+      const result = await deleteImage(url);
+      if (!result.success) {
+        return NextResponse.json(
+          { error: result.error },
+          { status: 500 }
+        );
+      }
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    return NextResponse.json(
+      { error: "Erreur lors de la suppression de l'image" },
       { status: 500 }
     );
   }

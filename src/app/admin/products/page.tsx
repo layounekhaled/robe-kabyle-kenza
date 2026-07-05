@@ -10,11 +10,10 @@ import {
   Image as ImageIcon,
   Loader2,
   X,
-  Link,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -49,6 +48,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import ImageUploader, { ImageItem } from '@/components/admin/ImageUploader';
+import OptimizedImage from '@/components/ui/optimized-image';
 import { formatPrice } from '@/lib/utils-admin';
 import { toast } from 'sonner';
 
@@ -121,8 +122,7 @@ export default function ProductsPage() {
   const [formVariants, setFormVariants] = useState<Array<{ size: string; color: string; stock: string }>>([
     { size: '', color: '', stock: '0' },
   ]);
-  const [formImages, setFormImages] = useState<Array<{ url: string; alt?: string; sortOrder: number }>>([]);
-  const [imageUrlInput, setImageUrlInput] = useState('');
+  const [formImages, setFormImages] = useState<ImageItem[]>([]);
 
   const fetchProducts = useCallback(async (page = 1) => {
     try {
@@ -202,9 +202,13 @@ export default function ProductsPage() {
         ? product.variants.map((v) => ({ size: v.size, color: v.color, stock: v.stock.toString() }))
         : [{ size: '', color: '', stock: '0' }]
     );
-    setFormImages(
-      product.images.map((img, idx) => ({ url: img.url, alt: img.alt || undefined, sortOrder: idx }))
-    );
+    const imageItems: ImageItem[] = (product.images || []).map((img, index) => ({
+      id: `existing-${img.id}`,
+      url: img.url,
+      alt: img.alt || undefined,
+      sortOrder: img.sortOrder ?? index,
+    }));
+    setFormImages(imageItems);
     setDialogOpen(true);
   };
 
@@ -214,7 +218,27 @@ export default function ProductsPage() {
       return;
     }
 
+    // Check if any images are still uploading
+    const uploadingImages = formImages.filter((img) => img.isUploading);
+    if (uploadingImages.length > 0) {
+      toast.error('Veuillez attendre la fin des uploads en cours');
+      return;
+    }
+
+    // Check for upload errors
+    const errorImages = formImages.filter((img) => img.uploadError);
+    if (errorImages.length > 0) {
+      toast.error('Certaines images ont échoué. Supprimez-les ou réessayez.');
+      return;
+    }
+
     const validVariants = formVariants.filter((v) => v.size && v.color);
+
+    const imagesData = formImages.map((img, index) => ({
+      url: img.url,
+      alt: img.alt || null,
+      sortOrder: index,
+    }));
 
     const payload = {
       reference: formReference,
@@ -225,7 +249,7 @@ export default function ProductsPage() {
       featured: formFeatured,
       active: formActive,
       variants: validVariants.map((v) => ({ size: v.size, color: v.color, stock: parseInt(v.stock) || 0 })),
-      images: formImages,
+      images: imagesData,
     };
 
     try {
@@ -306,27 +330,6 @@ export default function ProductsPage() {
     } finally {
       setBulkDeleting(false);
     }
-  };
-
-  const addImageUrl = () => {
-    const url = imageUrlInput.trim();
-    if (!url) {
-      toast.error('Veuillez entrer une URL d\'image');
-      return;
-    }
-    // Basic URL validation
-    try {
-      new URL(url);
-    } catch {
-      toast.error('URL invalide. Veuillez entrer une URL valide (ex: https://...)');
-      return;
-    }
-    setFormImages((prev) => [...prev, { url, sortOrder: prev.length }]);
-    setImageUrlInput('');
-  };
-
-  const removeImage = (index: number) => {
-    setFormImages((prev) => prev.filter((_, i) => i !== index).map((img, i) => ({ ...img, sortOrder: i })));
   };
 
   const addVariant = () => {
@@ -455,17 +458,14 @@ export default function ProductsPage() {
                           />
                         </TableCell>
                         <TableCell>
-                          {product.images[0] ? (
-                            <img
-                              src={product.images[0].url}
-                              alt={product.name}
-                              className="w-10 h-10 rounded-md object-cover"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
-                              <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                          )}
+                          <OptimizedImage
+                            src={product.images?.[0]?.url || '/logo-kabyle.png'}
+                            alt={product.name}
+                            width={40}
+                            height={40}
+                            className="rounded-md"
+                            useThumbnail
+                          />
                         </TableCell>
                         <TableCell className="font-mono text-xs">{product.reference}</TableCell>
                         <TableCell className="font-medium max-w-[200px] truncate">{product.name}</TableCell>
@@ -693,61 +693,15 @@ export default function ProductsPage() {
               </div>
             </div>
 
-            {/* Image URLs */}
-            <div className="space-y-3">
-              <Label>Images (URL)</Label>
-              <div className="flex flex-wrap gap-3 mb-3">
-                {formImages.map((img, index) => (
-                  <div key={index} className="relative group w-20 h-20">
-                    <img
-                      src={img.url}
-                      alt={`Image ${index + 1}`}
-                      className="w-20 h-20 rounded-lg object-cover border"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/logo.svg';
-                      }}
-                    />
-                    <button
-                      onClick={() => removeImage(index)}
-                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                    <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs text-center rounded-b-lg py-0.5">
-                      {index + 1}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="https://exemple.com/image.jpg"
-                    value={imageUrlInput}
-                    onChange={(e) => setImageUrlInput(e.target.value)}
-                    className="pl-10"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        addImageUrl();
-                      }
-                    }}
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addImageUrl}
-                  disabled={!imageUrlInput.trim()}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Ajouter
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Collez l&apos;URL d&apos;une image (Instagram, Facebook, etc.) et cliquez sur Ajouter
-              </p>
+            {/* Images */}
+            <div className="space-y-2">
+              <Label>Images</Label>
+              <ImageUploader
+                images={formImages}
+                onImagesChange={setFormImages}
+                maxFiles={10}
+                disabled={saving}
+              />
             </div>
           </div>
 

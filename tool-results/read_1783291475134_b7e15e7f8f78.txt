@@ -1,0 +1,836 @@
+     1→'use client';
+     2→
+     3→import { useEffect, useState, useCallback } from 'react';
+     4→import { useRouter } from 'next/navigation';
+     5→import {
+     6→  Plus,
+     7→  Search,
+     8→  Pencil,
+     9→  Trash2,
+    10→  Image as ImageIcon,
+    11→  Loader2,
+    12→  X,
+    13→  Link,
+    14→  ChevronLeft,
+    15→  ChevronRight,
+    16→} from 'lucide-react';
+    17→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+    18→import { Button } from '@/components/ui/button';
+    19→import { Input } from '@/components/ui/input';
+    20→import { Label } from '@/components/ui/label';
+    21→import { Textarea } from '@/components/ui/textarea';
+    22→import { Switch } from '@/components/ui/switch';
+    23→import { Badge } from '@/components/ui/badge';
+    24→import { Skeleton } from '@/components/ui/skeleton';
+    25→import { Checkbox } from '@/components/ui/checkbox';
+    26→import {
+    27→  Table,
+    28→  TableBody,
+    29→  TableCell,
+    30→  TableHead,
+    31→  TableHeader,
+    32→  TableRow,
+    33→} from '@/components/ui/table';
+    34→import {
+    35→  Dialog,
+    36→  DialogContent,
+    37→  DialogDescription,
+    38→  DialogFooter,
+    39→  DialogHeader,
+    40→  DialogTitle,
+    41→} from '@/components/ui/dialog';
+    42→import {
+    43→  AlertDialog,
+    44→  AlertDialogAction,
+    45→  AlertDialogCancel,
+    46→  AlertDialogContent,
+    47→  AlertDialogDescription,
+    48→  AlertDialogFooter,
+    49→  AlertDialogHeader,
+    50→  AlertDialogTitle,
+    51→} from '@/components/ui/alert-dialog';
+    52→import { formatPrice } from '@/lib/utils-admin';
+    53→import { toast } from 'sonner';
+    54→
+    55→interface ProductImage {
+    56→  id: string;
+    57→  url: string;
+    58→  alt: string | null;
+    59→  sortOrder: number;
+    60→}
+    61→
+    62→interface ProductVariant {
+    63→  id: string;
+    64→  size: string;
+    65→  color: string;
+    66→  stock: number;
+    67→}
+    68→
+    69→interface Product {
+    70→  id: string;
+    71→  reference: string;
+    72→  name: string;
+    73→  description: string | null;
+    74→  price: number;
+    75→  fabric: string | null;
+    76→  featured: boolean;
+    77→  active: boolean;
+    78→  images: ProductImage[];
+    79→  variants: ProductVariant[];
+    80→  createdAt: string;
+    81→}
+    82→
+    83→interface Pagination {
+    84→  page: number;
+    85→  limit: number;
+    86→  total: number;
+    87→  totalPages: number;
+    88→}
+    89→
+    90→export default function ProductsPage() {
+    91→  const router = useRouter();
+    92→  const [products, setProducts] = useState<Product[]>([]);
+    93→  const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 20, total: 0, totalPages: 0 });
+    94→  const [loading, setLoading] = useState(true);
+    95→  const [search, setSearch] = useState('');
+    96→
+    97→  // Selection state
+    98→  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    99→
+   100→  // Dialog states
+   101→  const [dialogOpen, setDialogOpen] = useState(false);
+   102→  const [editProduct, setEditProduct] = useState<Product | null>(null);
+   103→  const [saving, setSaving] = useState(false);
+   104→
+   105→  // Delete state (single)
+   106→  const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
+   107→  const [deleting, setDeleting] = useState(false);
+   108→
+   109→  // Bulk delete state
+   110→  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+   111→  const [bulkDeleting, setBulkDeleting] = useState(false);
+   112→
+   113→  // Form state
+   114→  const [formReference, setFormReference] = useState('');
+   115→  const [formName, setFormName] = useState('');
+   116→  const [formDescription, setFormDescription] = useState('');
+   117→  const [formPrice, setFormPrice] = useState('');
+   118→  const [formFabric, setFormFabric] = useState('');
+   119→  const [formFeatured, setFormFeatured] = useState(false);
+   120→  const [formActive, setFormActive] = useState(true);
+   121→  const [formVariants, setFormVariants] = useState<Array<{ size: string; color: string; stock: string }>>([
+   122→    { size: '', color: '', stock: '0' },
+   123→  ]);
+   124→  const [formImages, setFormImages] = useState<Array<{ url: string; alt?: string; sortOrder: number }>>([]);
+   125→  const [imageUrlInput, setImageUrlInput] = useState('');
+   126→
+   127→  const fetchProducts = useCallback(async (page = 1) => {
+   128→    try {
+   129→      setLoading(true);
+   130→      const params = new URLSearchParams();
+   131→      if (search) params.set('search', search);
+   132→      params.set('page', page.toString());
+   133→      params.set('limit', '20');
+   134→
+   135→      const res = await fetch(`/api/products?${params}`);
+   136→      if (res.ok) {
+   137→        const data = await res.json();
+   138→        setProducts(data.products);
+   139→        setPagination(data.pagination);
+   140→        setSelectedIds(new Set()); // Clear selection on new data
+   141→      }
+   142→    } catch (error) {
+   143→      console.error('Error fetching products:', error);
+   144→    } finally {
+   145→      setLoading(false);
+   146→    }
+   147→  }, [search]);
+   148→
+   149→  useEffect(() => {
+   150→    fetchProducts(1);
+   151→  }, [fetchProducts]);
+   152→
+   153→  // Selection helpers
+   154→  const toggleSelect = (id: string) => {
+   155→    setSelectedIds((prev) => {
+   156→      const next = new Set(prev);
+   157→      if (next.has(id)) {
+   158→        next.delete(id);
+   159→      } else {
+   160→        next.add(id);
+   161→      }
+   162→      return next;
+   163→    });
+   164→  };
+   165→
+   166→  const toggleSelectAll = () => {
+   167→    if (selectedIds.size === products.length) {
+   168→      setSelectedIds(new Set());
+   169→    } else {
+   170→      setSelectedIds(new Set(products.map((p) => p.id)));
+   171→    }
+   172→  };
+   173→
+   174→  const allSelected = products.length > 0 && selectedIds.size === products.length;
+   175→  const someSelected = selectedIds.size > 0 && !allSelected;
+   176→
+   177→  const openCreateDialog = () => {
+   178→    setEditProduct(null);
+   179→    setFormReference('');
+   180→    setFormName('');
+   181→    setFormDescription('');
+   182→    setFormPrice('');
+   183→    setFormFabric('');
+   184→    setFormFeatured(false);
+   185→    setFormActive(true);
+   186→    setFormVariants([{ size: '', color: '', stock: '0' }]);
+   187→    setFormImages([]);
+   188→    setDialogOpen(true);
+   189→  };
+   190→
+   191→  const openEditDialog = (product: Product) => {
+   192→    setEditProduct(product);
+   193→    setFormReference(product.reference);
+   194→    setFormName(product.name);
+   195→    setFormDescription(product.description || '');
+   196→    setFormPrice(product.price.toString());
+   197→    setFormFabric(product.fabric || '');
+   198→    setFormFeatured(product.featured);
+   199→    setFormActive(product.active);
+   200→    setFormVariants(
+   201→      product.variants.length > 0
+   202→        ? product.variants.map((v) => ({ size: v.size, color: v.color, stock: v.stock.toString() }))
+   203→        : [{ size: '', color: '', stock: '0' }]
+   204→    );
+   205→    setFormImages(
+   206→      product.images.map((img, idx) => ({ url: img.url, alt: img.alt || undefined, sortOrder: idx }))
+   207→    );
+   208→    setDialogOpen(true);
+   209→  };
+   210→
+   211→  const handleSave = async () => {
+   212→    if (!formReference || !formName || !formPrice) {
+   213→      toast.error('Veuillez remplir la référence, le nom et le prix');
+   214→      return;
+   215→    }
+   216→
+   217→    const validVariants = formVariants.filter((v) => v.size && v.color);
+   218→
+   219→    const payload = {
+   220→      reference: formReference,
+   221→      name: formName,
+   222→      description: formDescription || null,
+   223→      price: parseFloat(formPrice),
+   224→      fabric: formFabric || null,
+   225→      featured: formFeatured,
+   226→      active: formActive,
+   227→      variants: validVariants.map((v) => ({ size: v.size, color: v.color, stock: parseInt(v.stock) || 0 })),
+   228→      images: formImages,
+   229→    };
+   230→
+   231→    try {
+   232→      setSaving(true);
+   233→      let res;
+   234→      if (editProduct) {
+   235→        res = await fetch(`/api/products/${editProduct.id}`, {
+   236→          method: 'PUT',
+   237→          headers: { 'Content-Type': 'application/json' },
+   238→          body: JSON.stringify(payload),
+   239→        });
+   240→      } else {
+   241→        res = await fetch('/api/products', {
+   242→          method: 'POST',
+   243→          headers: { 'Content-Type': 'application/json' },
+   244→          body: JSON.stringify(payload),
+   245→        });
+   246→      }
+   247→
+   248→      if (res.ok) {
+   249→        toast.success(editProduct ? 'Produit mis à jour avec succès' : 'Produit créé avec succès');
+   250→        setDialogOpen(false);
+   251→        fetchProducts(pagination.page);
+   252→      } else {
+   253→        const data = await res.json();
+   254→        toast.error(data.error || 'Erreur lors de la sauvegarde');
+   255→      }
+   256→    } catch {
+   257→      toast.error('Erreur lors de la sauvegarde');
+   258→    } finally {
+   259→      setSaving(false);
+   260→    }
+   261→  };
+   262→
+   263→  const handleDelete = async () => {
+   264→    if (!deleteProduct) return;
+   265→
+   266→    try {
+   267→      setDeleting(true);
+   268→      const res = await fetch(`/api/products/${deleteProduct.id}`, { method: 'DELETE' });
+   269→      if (res.ok) {
+   270→        toast.success('Produit supprimé avec succès');
+   271→        setDeleteProduct(null);
+   272→        fetchProducts(pagination.page);
+   273→      } else {
+   274→        const data = await res.json();
+   275→        toast.error(data.error || 'Erreur lors de la suppression');
+   276→      }
+   277→    } catch {
+   278→      toast.error('Erreur lors de la suppression');
+   279→    } finally {
+   280→      setDeleting(false);
+   281→    }
+   282→  };
+   283→
+   284→  const handleBulkDelete = async () => {
+   285→    if (selectedIds.size === 0) return;
+   286→
+   287→    try {
+   288→      setBulkDeleting(true);
+   289→      const res = await fetch('/api/products', {
+   290→        method: 'DELETE',
+   291→        headers: { 'Content-Type': 'application/json' },
+   292→        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+   293→      });
+   294→      if (res.ok) {
+   295→        const data = await res.json();
+   296→        toast.success(data.message || `${selectedIds.size} produits supprimés avec succès`);
+   297→        setSelectedIds(new Set());
+   298→        setBulkDeleteOpen(false);
+   299→        fetchProducts(pagination.page);
+   300→      } else {
+   301→        const data = await res.json();
+   302→        toast.error(data.error || 'Erreur lors de la suppression');
+   303→      }
+   304→    } catch {
+   305→      toast.error('Erreur lors de la suppression multiple');
+   306→    } finally {
+   307→      setBulkDeleting(false);
+   308→    }
+   309→  };
+   310→
+   311→  const addImageUrl = () => {
+   312→    const url = imageUrlInput.trim();
+   313→    if (!url) {
+   314→      toast.error('Veuillez entrer une URL d\'image');
+   315→      return;
+   316→    }
+   317→    // Basic URL validation
+   318→    try {
+   319→      new URL(url);
+   320→    } catch {
+   321→      toast.error('URL invalide. Veuillez entrer une URL valide (ex: https://...)');
+   322→      return;
+   323→    }
+   324→    setFormImages((prev) => [...prev, { url, sortOrder: prev.length }]);
+   325→    setImageUrlInput('');
+   326→  };
+   327→
+   328→  const removeImage = (index: number) => {
+   329→    setFormImages((prev) => prev.filter((_, i) => i !== index).map((img, i) => ({ ...img, sortOrder: i })));
+   330→  };
+   331→
+   332→  const addVariant = () => {
+   333→    setFormVariants((prev) => [...prev, { size: '', color: '', stock: '0' }]);
+   334→  };
+   335→
+   336→  const removeVariant = (index: number) => {
+   337→    setFormVariants((prev) => prev.filter((_, i) => i !== index));
+   338→  };
+   339→
+   340→  const updateVariant = (index: number, field: 'size' | 'color' | 'stock', value: string) => {
+   341→    setFormVariants((prev) =>
+   342→      prev.map((v, i) => (i === index ? { ...v, [field]: value } : v))
+   343→    );
+   344→  };
+   345→
+   346→  const getTotalStock = (product: Product) => {
+   347→    return product.variants.reduce((sum, v) => sum + v.stock, 0);
+   348→  };
+   349→
+   350→  return (
+   351→    <div className="space-y-6">
+   352→      {/* Header */}
+   353→      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+   354→        <div>
+   355→          <h2 className="text-2xl font-bold">Produits</h2>
+   356→          <p className="text-muted-foreground">{pagination.total} produits au total</p>
+   357→        </div>
+   358→        <div className="flex items-center gap-2">
+   359→          {selectedIds.size > 0 && (
+   360→            <Button
+   361→              variant="destructive"
+   362→              onClick={() => setBulkDeleteOpen(true)}
+   363→              className="shrink-0"
+   364→            >
+   365→              <Trash2 className="mr-2 h-4 w-4" />
+   366→              Supprimer ({selectedIds.size})
+   367→            </Button>
+   368→          )}
+   369→          <Button onClick={openCreateDialog} className="bg-primary hover:bg-primary/90">
+   370→            <Plus className="mr-2 h-4 w-4" />
+   371→            Ajouter un produit
+   372→          </Button>
+   373→        </div>
+   374→      </div>
+   375→
+   376→      {/* Search */}
+   377→      <div className="relative max-w-md">
+   378→        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+   379→        <Input
+   380→          placeholder="Rechercher par référence, nom..."
+   381→          value={search}
+   382→          onChange={(e) => setSearch(e.target.value)}
+   383→          className="pl-10"
+   384→        />
+   385→      </div>
+   386→
+   387→      {/* Selection info bar */}
+   388→      {selectedIds.size > 0 && (
+   389→        <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 rounded-lg border">
+   390→          <span className="text-sm font-medium">
+   391→            {selectedIds.size} produit{selectedIds.size > 1 ? 's' : ''} sélectionné{selectedIds.size > 1 ? 's' : ''}
+   392→          </span>
+   393→          <Button
+   394→            variant="ghost"
+   395→            size="sm"
+   396→            className="text-xs h-7"
+   397→            onClick={() => setSelectedIds(new Set())}
+   398→          >
+   399→            Tout désélectionner
+   400→          </Button>
+   401→        </div>
+   402→      )}
+   403→
+   404→      {/* Products Table */}
+   405→      <Card>
+   406→        <CardContent className="p-0">
+   407→          {loading ? (
+   408→            <div className="p-6 space-y-4">
+   409→              {Array.from({ length: 5 }).map((_, i) => (
+   410→                <Skeleton key={i} className="h-16 w-full" />
+   411→              ))}
+   412→            </div>
+   413→          ) : products.length === 0 ? (
+   414→            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+   415→              <ImageIcon className="h-12 w-12 mb-4 opacity-50" />
+   416→              <p className="text-lg font-medium">Aucun produit trouvé</p>
+   417→              <p className="text-sm">Commencez par ajouter votre premier produit</p>
+   418→            </div>
+   419→          ) : (
+   420→            <>
+   421→              <div className="overflow-x-auto">
+   422→                <Table>
+   423→                  <TableHeader>
+   424→                    <TableRow>
+   425→                      <TableHead className="w-12">
+   426→                        <Checkbox
+   427→                          checked={allSelected}
+   428→                          ref={(el) => {
+   429→                            if (el) {
+   430→                              (el as HTMLButtonElement & { indeterminate?: boolean }).indeterminate = someSelected;
+   431→                            }
+   432→                          }}
+   433→                          onCheckedChange={toggleSelectAll}
+   434→                        />
+   435→                      </TableHead>
+   436→                      <TableHead className="w-16">Image</TableHead>
+   437→                      <TableHead>Référence</TableHead>
+   438→                      <TableHead>Nom</TableHead>
+   439→                      <TableHead>Prix</TableHead>
+   440→                      <TableHead>Stock total</TableHead>
+   441→                      <TableHead>Statut</TableHead>
+   442→                      <TableHead className="text-right">Actions</TableHead>
+   443→                    </TableRow>
+   444→                  </TableHeader>
+   445→                  <TableBody>
+   446→                    {products.map((product) => (
+   447→                      <TableRow
+   448→                        key={product.id}
+   449→                        className={selectedIds.has(product.id) ? 'bg-muted/50' : ''}
+   450→                      >
+   451→                        <TableCell>
+   452→                          <Checkbox
+   453→                            checked={selectedIds.has(product.id)}
+   454→                            onCheckedChange={() => toggleSelect(product.id)}
+   455→                          />
+   456→                        </TableCell>
+   457→                        <TableCell>
+   458→                          {product.images[0] ? (
+   459→                            <img
+   460→                              src={product.images[0].url}
+   461→                              alt={product.name}
+   462→                              className="w-10 h-10 rounded-md object-cover"
+   463→                            />
+   464→                          ) : (
+   465→                            <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
+   466→                              <ImageIcon className="h-4 w-4 text-muted-foreground" />
+   467→                            </div>
+   468→                          )}
+   469→                        </TableCell>
+   470→                        <TableCell className="font-mono text-xs">{product.reference}</TableCell>
+   471→                        <TableCell className="font-medium max-w-[200px] truncate">{product.name}</TableCell>
+   472→                        <TableCell className="text-sm">{formatPrice(product.price)}</TableCell>
+   473→                        <TableCell>
+   474→                          <span
+   475→                            className={`text-sm font-medium ${
+   476→                              getTotalStock(product) === 0
+   477→                                ? 'text-red-600'
+   478→                                : getTotalStock(product) <= 3
+   479→                                ? 'text-yellow-600'
+   480→                                : 'text-foreground'
+   481→                            }`}
+   482→                          >
+   483→                            {getTotalStock(product)}
+   484→                          </span>
+   485→                        </TableCell>
+   486→                        <TableCell>
+   487→                          <div className="flex gap-1">
+   488→                            {product.active ? (
+   489→                              <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+   490→                                Actif
+   491→                              </Badge>
+   492→                            ) : (
+   493→                              <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">
+   494→                                Inactif
+   495→                              </Badge>
+   496→                            )}
+   497→                            {product.featured && (
+   498→                              <Badge variant="outline" className="bg-kabyle-gold/20 text-kabyle-gold border-kabyle-gold/30">
+   499→                                Vedette
+   500→                              </Badge>
+   501→                            )}
+   502→                          </div>
+   503→                        </TableCell>
+   504→                        <TableCell className="text-right">
+   505→                          <div className="flex items-center justify-end gap-1">
+   506→                            <Button
+   507→                              variant="ghost"
+   508→                              size="icon"
+   509→                              className="h-8 w-8"
+   510→                              onClick={() => openEditDialog(product)}
+   511→                            >
+   512→                              <Pencil className="h-4 w-4" />
+   513→                            </Button>
+   514→                            <Button
+   515→                              variant="ghost"
+   516→                              size="icon"
+   517→                              className="h-8 w-8 text-destructive hover:text-destructive"
+   518→                              onClick={() => setDeleteProduct(product)}
+   519→                            >
+   520→                              <Trash2 className="h-4 w-4" />
+   521→                            </Button>
+   522→                          </div>
+   523→                        </TableCell>
+   524→                      </TableRow>
+   525→                    ))}
+   526→                  </TableBody>
+   527→                </Table>
+   528→              </div>
+   529→
+   530→              {/* Pagination */}
+   531→              {pagination.totalPages > 1 && (
+   532→                <div className="flex items-center justify-between px-4 py-3 border-t">
+   533→                  <p className="text-sm text-muted-foreground">
+   534→                    Page {pagination.page} sur {pagination.totalPages}
+   535→                  </p>
+   536→                  <div className="flex gap-2">
+   537→                    <Button
+   538→                      variant="outline"
+   539→                      size="sm"
+   540→                      disabled={pagination.page <= 1}
+   541→                      onClick={() => fetchProducts(pagination.page - 1)}
+   542→                    >
+   543→                      <ChevronLeft className="h-4 w-4" />
+   544→                    </Button>
+   545→                    <Button
+   546→                      variant="outline"
+   547→                      size="sm"
+   548→                      disabled={pagination.page >= pagination.totalPages}
+   549→                      onClick={() => fetchProducts(pagination.page + 1)}
+   550→                    >
+   551→                      <ChevronRight className="h-4 w-4" />
+   552→                    </Button>
+   553→                  </div>
+   554→                </div>
+   555→              )}
+   556→            </>
+   557→          )}
+   558→        </CardContent>
+   559→      </Card>
+   560→
+   561→      {/* Create/Edit Dialog */}
+   562→      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+   563→        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+   564→          <DialogHeader>
+   565→            <DialogTitle>{editProduct ? 'Modifier le produit' : 'Ajouter un produit'}</DialogTitle>
+   566→            <DialogDescription>
+   567→              {editProduct
+   568→                ? 'Modifiez les informations du produit'
+   569→                : 'Remplissez les informations pour créer un nouveau produit'}
+   570→            </DialogDescription>
+   571→          </DialogHeader>
+   572→
+   573→          <div className="space-y-6 py-4">
+   574→            {/* Basic Info */}
+   575→            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   576→              <div className="space-y-2">
+   577→                <Label htmlFor="reference">Référence *</Label>
+   578→                <Input
+   579→                  id="reference"
+   580→                  placeholder="RK-001"
+   581→                  value={formReference}
+   582→                  onChange={(e) => setFormReference(e.target.value.toUpperCase())}
+   583→                />
+   584→              </div>
+   585→              <div className="space-y-2">
+   586→                <Label htmlFor="name">Nom *</Label>
+   587→                <Input
+   588→                  id="name"
+   589→                  placeholder="Robe Kabyle Traditionnelle"
+   590→                  value={formName}
+   591→                  onChange={(e) => setFormName(e.target.value)}
+   592→                />
+   593→              </div>
+   594→            </div>
+   595→
+   596→            <div className="space-y-2">
+   597→              <Label htmlFor="description">Description</Label>
+   598→              <Textarea
+   599→                id="description"
+   600→                placeholder="Description du produit..."
+   601→                value={formDescription}
+   602→                onChange={(e) => setFormDescription(e.target.value)}
+   603→                rows={3}
+   604→              />
+   605→            </div>
+   606→
+   607→            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   608→              <div className="space-y-2">
+   609→                <Label htmlFor="price">Prix (DA) *</Label>
+   610→                <Input
+   611→                  id="price"
+   612→                  type="number"
+   613→                  placeholder="15000"
+   614→                  value={formPrice}
+   615→                  onChange={(e) => setFormPrice(e.target.value)}
+   616→                  min="0"
+   617→                />
+   618→              </div>
+   619→              <div className="space-y-2">
+   620→                <Label htmlFor="fabric">Tissu</Label>
+   621→                <Input
+   622→                  id="fabric"
+   623→                  placeholder="Satin, Soie..."
+   624→                  value={formFabric}
+   625→                  onChange={(e) => setFormFabric(e.target.value)}
+   626→                />
+   627→              </div>
+   628→            </div>
+   629→
+   630→            <div className="flex items-center gap-6">
+   631→              <div className="flex items-center gap-2">
+   632→                <Switch
+   633→                  id="featured"
+   634→                  checked={formFeatured}
+   635→                  onCheckedChange={setFormFeatured}
+   636→                />
+   637→                <Label htmlFor="featured">Produit vedette</Label>
+   638→              </div>
+   639→              <div className="flex items-center gap-2">
+   640→                <Switch
+   641→                  id="active"
+   642→                  checked={formActive}
+   643→                  onCheckedChange={setFormActive}
+   644→                />
+   645→                <Label htmlFor="active">Actif</Label>
+   646→              </div>
+   647→            </div>
+   648→
+   649→            {/* Variants */}
+   650→            <div className="space-y-3">
+   651→              <div className="flex items-center justify-between">
+   652→                <Label>Variantes (Taille / Couleur / Stock)</Label>
+   653→                <Button variant="outline" size="sm" onClick={addVariant}>
+   654→                  <Plus className="mr-1 h-3 w-3" />
+   655→                  Ajouter
+   656→                </Button>
+   657→              </div>
+   658→              <div className="space-y-2">
+   659→                {formVariants.map((variant, index) => (
+   660→                  <div key={index} className="flex items-center gap-2">
+   661→                    <Input
+   662→                      placeholder="Taille (S, M, L...)"
+   663→                      value={variant.size}
+   664→                      onChange={(e) => updateVariant(index, 'size', e.target.value)}
+   665→                      className="flex-1"
+   666→                    />
+   667→                    <Input
+   668→                      placeholder="Couleur"
+   669→                      value={variant.color}
+   670→                      onChange={(e) => updateVariant(index, 'color', e.target.value)}
+   671→                      className="flex-1"
+   672→                    />
+   673→                    <Input
+   674→                      placeholder="Stock"
+   675→                      type="number"
+   676→                      value={variant.stock}
+   677→                      onChange={(e) => updateVariant(index, 'stock', e.target.value)}
+   678→                      className="w-20"
+   679→                      min="0"
+   680→                    />
+   681→                    {formVariants.length > 1 && (
+   682→                      <Button
+   683→                        variant="ghost"
+   684→                        size="icon"
+   685→                        className="h-8 w-8 shrink-0 text-destructive"
+   686→                        onClick={() => removeVariant(index)}
+   687→                      >
+   688→                        <X className="h-4 w-4" />
+   689→                      </Button>
+   690→                    )}
+   691→                  </div>
+   692→                ))}
+   693→              </div>
+   694→            </div>
+   695→
+   696→            {/* Image URLs */}
+   697→            <div className="space-y-3">
+   698→              <Label>Images (URL)</Label>
+   699→              <div className="flex flex-wrap gap-3 mb-3">
+   700→                {formImages.map((img, index) => (
+   701→                  <div key={index} className="relative group w-20 h-20">
+   702→                    <img
+   703→                      src={img.url}
+   704→                      alt={`Image ${index + 1}`}
+   705→                      className="w-20 h-20 rounded-lg object-cover border"
+   706→                      onError={(e) => {
+   707→                        (e.target as HTMLImageElement).src = '/logo.svg';
+   708→                      }}
+   709→                    />
+   710→                    <button
+   711→                      onClick={() => removeImage(index)}
+   712→                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+   713→                    >
+   714→                      <X className="h-3 w-3" />
+   715→                    </button>
+   716→                    <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs text-center rounded-b-lg py-0.5">
+   717→                      {index + 1}
+   718→                    </span>
+   719→                  </div>
+   720→                ))}
+   721→              </div>
+   722→              <div className="flex gap-2">
+   723→                <div className="relative flex-1">
+   724→                  <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+   725→                  <Input
+   726→                    placeholder="https://exemple.com/image.jpg"
+   727→                    value={imageUrlInput}
+   728→                    onChange={(e) => setImageUrlInput(e.target.value)}
+   729→                    className="pl-10"
+   730→                    onKeyDown={(e) => {
+   731→                      if (e.key === 'Enter') {
+   732→                        e.preventDefault();
+   733→                        addImageUrl();
+   734→                      }
+   735→                    }}
+   736→                  />
+   737→                </div>
+   738→                <Button
+   739→                  type="button"
+   740→                  variant="outline"
+   741→                  onClick={addImageUrl}
+   742→                  disabled={!imageUrlInput.trim()}
+   743→                >
+   744→                  <Plus className="h-4 w-4 mr-1" />
+   745→                  Ajouter
+   746→                </Button>
+   747→              </div>
+   748→              <p className="text-xs text-muted-foreground">
+   749→                Collez l&apos;URL d&apos;une image (Instagram, Facebook, etc.) et cliquez sur Ajouter
+   750→              </p>
+   751→            </div>
+   752→          </div>
+   753→
+   754→          <DialogFooter>
+   755→            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
+   756→              Annuler
+   757→            </Button>
+   758→            <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90">
+   759→              {saving ? (
+   760→                <>
+   761→                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+   762→                  Enregistrement...
+   763→                </>
+   764→              ) : editProduct ? (
+   765→                'Mettre à jour'
+   766→              ) : (
+   767→                'Créer le produit'
+   768→              )}
+   769→            </Button>
+   770→          </DialogFooter>
+   771→        </DialogContent>
+   772→      </Dialog>
+   773→
+   774→      {/* Single Delete Confirmation */}
+   775→      <AlertDialog open={!!deleteProduct} onOpenChange={() => setDeleteProduct(null)}>
+   776→        <AlertDialogContent>
+   777→          <AlertDialogHeader>
+   778→            <AlertDialogTitle>Supprimer le produit</AlertDialogTitle>
+   779→            <AlertDialogDescription>
+   780→              Êtes-vous sûr de vouloir supprimer le produit &quot;{deleteProduct?.name}&quot; ?
+   781→              Cette action est irréversible. Le produit et toutes ses données associées seront définitivement supprimés.
+   782→            </AlertDialogDescription>
+   783→          </AlertDialogHeader>
+   784→          <AlertDialogFooter>
+   785→            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+   786→            <AlertDialogAction
+   787→              onClick={handleDelete}
+   788→              disabled={deleting}
+   789→              className="bg-destructive hover:bg-destructive/90"
+   790→            >
+   791→              {deleting ? (
+   792→                <>
+   793→                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+   794→                  Suppression...
+   795→                </>
+   796→              ) : (
+   797→                'Supprimer'
+   798→              )}
+   799→            </AlertDialogAction>
+   800→          </AlertDialogFooter>
+   801→        </AlertDialogContent>
+   802→      </AlertDialog>
+   803→
+   804→      {/* Bulk Delete Confirmation */}
+   805→      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+   806→        <AlertDialogContent>
+   807→          <AlertDialogHeader>
+   808→            <AlertDialogTitle>Supprimer {selectedIds.size} produit{selectedIds.size > 1 ? 's' : ''}</AlertDialogTitle>
+   809→            <AlertDialogDescription>
+   810→              Êtes-vous sûr de vouloir supprimer {selectedIds.size} produit{selectedIds.size > 1 ? 's' : ''} ?
+   811→              Cette action est irréversible. Les produits et toutes leurs données associées (images, variantes, etc.) seront définitivement supprimés.
+   812→            </AlertDialogDescription>
+   813→          </AlertDialogHeader>
+   814→          <AlertDialogFooter>
+   815→            <AlertDialogCancel disabled={bulkDeleting}>Annuler</AlertDialogCancel>
+   816→            <AlertDialogAction
+   817→              onClick={handleBulkDelete}
+   818→              disabled={bulkDeleting}
+   819→              className="bg-destructive hover:bg-destructive/90"
+   820→            >
+   821→              {bulkDeleting ? (
+   822→                <>
+   823→                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+   824→                  Suppression...
+   825→                </>
+   826→              ) : (
+   827→                `Supprimer ${selectedIds.size} produit${selectedIds.size > 1 ? 's' : ''}`
+   828→              )}
+   829→            </AlertDialogAction>
+   830→          </AlertDialogFooter>
+   831→        </AlertDialogContent>
+   832→      </AlertDialog>
+   833→    </div>
+   834→  );
+   835→}
+   836→

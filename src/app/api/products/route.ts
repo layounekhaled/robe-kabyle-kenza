@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { deleteMultipleImages, isSupabaseUrl } from "@/lib/supabase-storage";
 
 /**
  * GET /api/products - List products with optional filters
@@ -116,6 +117,12 @@ export async function DELETE(request: NextRequest) {
     }
 
     await db.$transaction(async (tx) => {
+      // Get image URLs before deleting (for Supabase cleanup)
+      const imagesToDelete = await tx.productImage.findMany({
+        where: { productId: { in: ids } },
+        select: { url: true },
+      });
+
       // Delete order items referencing these products
       await tx.orderItem.deleteMany({ where: { productId: { in: ids } } });
       // Delete store sale items referencing these products
@@ -126,6 +133,16 @@ export async function DELETE(request: NextRequest) {
       await tx.productVariant.deleteMany({ where: { productId: { in: ids } } });
       // Delete the products
       await tx.product.deleteMany({ where: { id: { in: ids } } });
+
+      // Clean up Supabase Storage images (non-blocking)
+      const supabaseUrls = imagesToDelete
+        .map(img => img.url)
+        .filter(url => isSupabaseUrl(url));
+      if (supabaseUrls.length > 0) {
+        deleteMultipleImages(supabaseUrls).catch(err => {
+          console.error("[STORAGE] Failed to delete some images from Supabase:", err);
+        });
+      }
     });
 
     return NextResponse.json({

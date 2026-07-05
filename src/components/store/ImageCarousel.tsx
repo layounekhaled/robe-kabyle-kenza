@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import Image from "next/image";
 import {
   Carousel,
   CarouselContent,
@@ -9,6 +8,7 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from "@/components/ui/carousel";
+import OptimizedImage from "@/components/ui/optimized-image";
 import { cn } from "@/lib/utils";
 
 interface ImageCarouselProps {
@@ -35,7 +35,13 @@ export default function ImageCarousel({
   if (images.length === 0) {
     return (
       <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-muted flex items-center justify-center">
-        <span className="text-muted-foreground">Aucune image</span>
+        <OptimizedImage
+          src="/logo-kabyle.png"
+          alt={productName}
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="object-contain p-8"
+        />
       </div>
     );
   }
@@ -47,7 +53,7 @@ export default function ImageCarousel({
         className="relative aspect-[3/4] rounded-xl overflow-hidden bg-muted cursor-zoom-in"
         onClick={() => setIsZoomed(!isZoomed)}
       >
-        <Image
+        <OptimizedImage
           src={images[selectedIndex].url}
           alt={images[selectedIndex].alt || `${productName} - Image ${selectedIndex + 1}`}
           fill
@@ -56,7 +62,7 @@ export default function ImageCarousel({
             "object-cover transition-transform duration-300",
             isZoomed && "scale-150 cursor-zoom-out"
           )}
-          priority
+          fallbackSrc="/logo-kabyle.png"
         />
       </div>
 
@@ -74,12 +80,14 @@ export default function ImageCarousel({
                   : "border-transparent opacity-60 hover:opacity-100"
               )}
             >
-              <Image
+              <OptimizedImage
                 src={image.url}
                 alt={image.alt || `${productName} - Miniature ${index + 1}`}
                 fill
                 sizes="64px"
                 className="object-cover"
+                useThumbnail
+                fallbackSrc="/logo-kabyle.png"
               />
             </button>
           ))}
