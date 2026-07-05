@@ -127,7 +127,7 @@ export async function PUT(
 }
 
 /**
- * DELETE /api/products/[id] - Soft delete product (admin only)
+ * DELETE /api/products/[id] - Hard delete product (admin only)
  */
 export async function DELETE(
   request: NextRequest,
@@ -148,13 +148,22 @@ export async function DELETE(
       );
     }
 
-    // Soft delete by setting active to false
-    const product = await db.product.update({
-      where: { id },
-      data: { active: false },
+    // Hard delete - remove product and all related data (images, variants, order items)
+    // OrderItems reference the product, so we need to handle them
+    await db.$transaction(async (tx) => {
+      // Delete order items referencing this product first
+      await tx.orderItem.deleteMany({ where: { productId: id } });
+      // Delete store sale items referencing this product
+      await tx.storeSaleItem.deleteMany({ where: { productId: id } });
+      // Delete product images
+      await tx.productImage.deleteMany({ where: { productId: id } });
+      // Delete product variants
+      await tx.productVariant.deleteMany({ where: { productId: id } });
+      // Finally delete the product itself
+      await tx.product.delete({ where: { id } });
     });
 
-    return NextResponse.json({ product, message: "Produit désactivé avec succès" });
+    return NextResponse.json({ message: "Produit supprimé avec succès" });
   } catch (error) {
     console.error("Error deleting product:", error);
     return NextResponse.json(

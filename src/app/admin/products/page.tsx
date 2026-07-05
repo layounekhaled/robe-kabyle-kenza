@@ -234,7 +234,7 @@ export default function ProductsPage() {
       setDeleting(true);
       const res = await fetch(`/api/products/${deleteProduct.id}`, { method: 'DELETE' });
       if (res.ok) {
-        toast.success('Produit désactivé avec succès');
+        toast.success('Produit supprimé avec succès');
         setDeleteProduct(null);
         fetchProducts(pagination.page);
       } else {
@@ -666,10 +666,10 @@ export default function ProductsPage() {
       <AlertDialog open={!!deleteProduct} onOpenChange={() => setDeleteProduct(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Désactiver le produit</AlertDialogTitle>
+            <AlertDialogTitle>Supprimer le produit</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir désactiver le produit &quot;{deleteProduct?.name}&quot; ?
-              Le produit sera marqué comme inactif mais ne sera pas supprimé.
+              Êtes-vous sûr de vouloir supprimer le produit &quot;{deleteProduct?.name}&quot; ?
+              Cette action est irréversible. Le produit et toutes ses données associées seront définitivement supprimés.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -685,7 +685,7 @@ export default function ProductsPage() {
                   Suppression...
                 </>
               ) : (
-                'Désactiver'
+                'Supprimer'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
