@@ -13,12 +13,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/store/Navbar";
 import Footer from "@/components/store/Footer";
 import ProductCard from "@/components/store/ProductCard";
-import { db } from "@/lib/db";
+import { db, ensureSchema } from "@/lib/db";
 
 // Force dynamic rendering so DB is queried at request time, not at build time
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
+  // Ensure DB schema is applied (auto-setup on first request)
+  await ensureSchema();
+
   // Fetch featured products directly in the server component
   let featuredProducts: Array<{
     id: string; reference: string; name: string; description: string | null;

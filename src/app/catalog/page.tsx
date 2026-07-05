@@ -1,12 +1,15 @@
 import Navbar from "@/components/store/Navbar";
 import Footer from "@/components/store/Footer";
 import CatalogClient from "@/components/store/CatalogClient";
-import { db } from "@/lib/db";
+import { db, ensureSchema } from "@/lib/db";
 
 // Force dynamic rendering so DB is queried at request time, not at build time
 export const dynamic = 'force-dynamic';
 
 export default async function CatalogPage() {
+  // Ensure DB schema is applied (auto-setup on first request)
+  await ensureSchema();
+
   let serializedProducts: Array<{
     id: string; reference: string; name: string; description: string | null;
     price: number; fabric: string | null; featured: boolean; active: boolean;
