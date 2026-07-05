@@ -290,6 +290,19 @@ function OrderFormContent() {
     form.setValue("communeId", "");
   }, [selectedWilayaId, form]);
 
+  // Reset commune when delivery type changes (stop desk requires specific communes)
+  useEffect(() => {
+    form.setValue("communeId", "");
+  }, [deliveryType, form]);
+
+  // Filtered communes based on delivery type
+  const filteredCommunes = deliveryType === "stopdesk"
+    ? communes.filter((c) => c.hasStopDesk)
+    : communes;
+
+  // Check if stop desk is available in the selected wilaya
+  const hasStopDeskInWilaya = communes.some((c) => c.hasStopDesk);
+
   // Calculate shipping rates when wilaya is selected
   useEffect(() => {
     if (!selectedWilayaId) {
@@ -832,11 +845,23 @@ function OrderFormContent() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent className="max-h-60">
-                                  {communes.map((c) => (
+                                  {filteredCommunes.map((c) => (
                                     <SelectItem key={`${c.name}-${c.codePostal}`} value={c.name}>
-                                      {c.name}
+                                      <div className="flex items-center gap-2">
+                                        <span>{c.name}</span>
+                                        {deliveryType === "home" && c.hasStopDesk && (
+                                          <Badge variant="outline" className="text-[10px] py-0 px-1 border-green-300 text-green-700 bg-green-50">
+                                            Stop Desk
+                                          </Badge>
+                                        )}
+                                      </div>
                                     </SelectItem>
                                   ))}
+                                  {filteredCommunes.length === 0 && communes.length > 0 && deliveryType === "stopdesk" && (
+                                    <div className="px-2 py-3 text-sm text-muted-foreground text-center">
+                                      Aucun Stop Desk disponible dans cette wilaya
+                                    </div>
+                                  )}
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -910,11 +935,20 @@ function OrderFormContent() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => setDeliveryType("stopdesk")}
+                              onClick={() => {
+                                if (communes.length > 0 && !hasStopDeskInWilaya) {
+                                  toast.error("Aucun Stop Desk disponible dans cette wilaya");
+                                  return;
+                                }
+                                setDeliveryType("stopdesk");
+                              }}
+                              disabled={communes.length > 0 && !hasStopDeskInWilaya}
                               className={cn(
                                 "flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all",
                                 deliveryType === "stopdesk"
                                   ? "border-kabyle-terracotta bg-kabyle-cream"
+                                  : communes.length > 0 && !hasStopDeskInWilaya
+                                  ? "border-transparent bg-muted/50 opacity-50 cursor-not-allowed"
                                   : "border-transparent bg-muted hover:bg-kabyle-cream/50"
                               )}
                             >
@@ -929,9 +963,14 @@ function OrderFormContent() {
                                 )}>
                                   Stop Desk
                                 </p>
-                                {shippingRates && (
+                                {shippingRates && hasStopDeskInWilaya && (
                                   <p className="text-xs text-muted-foreground">
                                     {formatPrice(shippingRates.stopDesk)}
+                                  </p>
+                                )}
+                                {communes.length > 0 && !hasStopDeskInWilaya && (
+                                  <p className="text-xs text-red-500">
+                                    Non disponible
                                   </p>
                                 )}
                               </div>
