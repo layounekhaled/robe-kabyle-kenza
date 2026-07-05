@@ -295,8 +295,8 @@ export async function POST(request: NextRequest) {
             commune: customerCommune,
             montant: totalAmount + shipping,
             produit: productDesc,
-            type: deliveryType === "stopdesk" ? "stopdesk" : "home",
-            order_type: 0,  // 0 = livraison (not échange)
+            type: 1,  // 1 = Livraison (NOT 2 which = Echange!)
+            stop_desk: deliveryType === "stopdesk" ? 1 : 0,  // 0=home, 1=stop desk
             remarque: notes || `Commande ${orderNumber}`,
             reference: orderNumber,
             quantite: orderItems.reduce((sum, item) => sum + item.quantity, 0),

@@ -133,12 +133,34 @@ export async function PUT(
             where: { active: true },
           });
           if (ecotrackSettings) {
-            await updateEcotrackOrderStatus(existing.ecotrackTracking, "vers station");
-            updateData.ecotrackStatus = "vers station";
-            console.log(`✅ Ecotrack status updated to "vers station" for tracking ${existing.ecotrackTracking}`);
+            // Get wilaya code for the update request
+            let wilayaCode: number | null = null;
+            try {
+              const { getWilayas } = await import("@/lib/ecotrack");
+              const wilayas = await getWilayas();
+              const matchedWilaya = wilayas.find(w => w.name === existing.wilaya);
+              if (matchedWilaya) wilayaCode = matchedWilaya.code;
+            } catch {
+              const parsed = parseInt(existing.wilaya);
+              if (!isNaN(parsed)) wilayaCode = parsed;
+            }
+
+            if (wilayaCode) {
+              await updateEcotrackOrderStatus(existing.ecotrackTracking, "vers_station", {
+                type: 1,  // 1 = Livraison
+                wilaya: wilayaCode,
+                commune: existing.commune,
+                adresse: existing.address,
+                client: existing.customer.name,
+                tel: existing.phone || existing.customer.phone,
+                montant: existing.totalAmount + existing.shippingCost,
+              });
+            }
+            updateData.ecotrackStatus = "vers_station";
+            console.log(`✅ Ecotrack status updated to "vers_station" for tracking ${existing.ecotrackTracking}`);
           }
         } catch (ecotrackUpdateError) {
-          console.error("⚠️ Failed to update Ecotrack status to 'vers station':", ecotrackUpdateError);
+          console.error("⚠️ Failed to update Ecotrack status to 'vers_station':", ecotrackUpdateError);
           // Don't fail the whole update - local status is still saved
         }
       }
@@ -150,7 +172,28 @@ export async function PUT(
             where: { active: true },
           });
           if (ecotrackSettings) {
-            await updateEcotrackOrderStatus(existing.ecotrackTracking, "livré");
+            let wilayaCode: number | null = null;
+            try {
+              const { getWilayas } = await import("@/lib/ecotrack");
+              const wilayas = await getWilayas();
+              const matchedWilaya = wilayas.find(w => w.name === existing.wilaya);
+              if (matchedWilaya) wilayaCode = matchedWilaya.code;
+            } catch {
+              const parsed = parseInt(existing.wilaya);
+              if (!isNaN(parsed)) wilayaCode = parsed;
+            }
+
+            if (wilayaCode) {
+              await updateEcotrackOrderStatus(existing.ecotrackTracking, "livré", {
+                type: 1,
+                wilaya: wilayaCode,
+                commune: existing.commune,
+                adresse: existing.address,
+                client: existing.customer.name,
+                tel: existing.phone || existing.customer.phone,
+                montant: existing.totalAmount + existing.shippingCost,
+              });
+            }
             updateData.ecotrackStatus = "livré";
             console.log(`✅ Ecotrack status updated to "livré" for tracking ${existing.ecotrackTracking}`);
           }
@@ -202,8 +245,8 @@ export async function PUT(
               commune: existing.commune,
               montant: existing.totalAmount + existing.shippingCost,
               produit: productDesc,
-              type: "home",
-              order_type: 0,  // 0 = livraison (not échange)
+              type: 1,  // 1 = Livraison (NOT 2 which = Echange!)
+              stop_desk: 0,  // 0 = home delivery (default for manual sends)
               remarque: existing.notes || `Commande ${existing.orderNumber}`,
               reference: existing.orderNumber,
               quantite: existing.items.reduce((sum, item) => sum + item.quantity, 0),

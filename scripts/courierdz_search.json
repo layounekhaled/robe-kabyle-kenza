@@ -1,0 +1,47 @@
+[
+  {
+    "url": "https://github.com/PiteurStudio/CourierDZ",
+    "name": "CourierDZ is a PHP client designed to simplify the integration of",
+    "snippet": "CourierDZ is a PHP client designed to simplify the integration of Algerian shipping providers into your applications. Whether you're working on an ...",
+    "host_name": "github.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://play.google.com/store/apps/details?id=dz.ecotrack.seller&hl=en_US",
+    "name": "ECOTRACK - Expéditeur - Apps on Google Play",
+    "snippet": "Download the ECOTRACK - Shipper app today and discover a new way to track and manage your shipments! Updated on. Jun 18, 2026.",
+    "host_name": "play.google.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://dzbuild.com/docs/couriers/ecotrack",
+    "name": "EcoTrack - DZBuild",
+    "snippet": "EcoTrack is a shared shipping API that powers a large family of Algerian couriers. Picking the right slug in DZBuild lets you authenticate with a single bearer ...",
+    "host_name": "dzbuild.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://synctrack.io/couriers/ecotrack",
+    "name": "Track Your ECOTRACK Packages - Synctrack",
+    "snippet": "Enter ECOTRACK tracking number to track your packages. Synctrack provides ECOTRACK delivery status, detailed tracking, estimated delivery date.",
+    "host_name": "synctrack.io",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://suivi.ecotrack.dz",
+    "name": "Suivre mon colis - Ecotrack",
+    "snippet": "No information is available for this page. · Learn why",
+    "host_name": "suivi.ecotrack.dz",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  }
+]

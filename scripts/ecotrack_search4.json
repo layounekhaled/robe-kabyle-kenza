@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://github.com/PiteurStudio/CourierDZ",
+    "name": "CourierDZ is a PHP client designed to simplify the integration of",
+    "snippet": "Order Management: Create, update, and cancel shipping orders effortlessly. Requirements PHP 8.2 or higher cURL. Create a parcel ( order )",
+    "host_name": "github.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://stackoverflow.com/questions/22242525/order-status-logic-in-php",
+    "name": "Order status logic in PHP - Stack Overflow",
+    "snippet": "What I want to achieve is to let the user know if their order is: No order, Interested in making an order, Refunded, Dispatched, Payment ...",
+    "host_name": "stackoverflow.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.youtube.com/watch?v=EcR22MdWJn4",
+    "name": "PHP Ecom Part 28: How to display Order Details in PHP ecommerce",
+    "snippet": "In this video, you will learn how to display order details in php ecommerce project. We will be displaying the ordered items, ...",
+    "host_name": "www.youtube.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://forum.cs-cart.com/t/add-order-php-to-a-shipping-status-email-header/6001",
+    "name": "Add Order Php To A Shipping Status Email Header - CS-Cart Forums",
+    "snippet": "I would like to create a new shipping status and insert some php code into the email header that will grab the name of the product that has been ordered.",
+    "host_name": "forum.cs-cart.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://developer.myparcel.nl/documentation/50.php-sdk.html",
+    "name": "PHP SDK - MyParcel",
+    "snippet": "To create order lines, you'll probably want to loop over the order lines from the order in your webshop. Every Order should contain one or more order lines.",
+    "host_name": "developer.myparcel.nl",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://docs.miva.com/developer/developer-resources/json-api/functions/order_create",
+    "name": "Order_Create - Miva Developer Docs",
+    "snippet": "This function allows you to create a new order. This function takes input parameters for both items and products. Items allows you to add any item to an order.",
+    "host_name": "docs.miva.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://docs.api.shipveho.com/docs/veho-api/624974c3b51ec-create-an-order",
+    "name": "Create an order | Veho API",
+    "snippet": "The Order request should include an Order object. An order must include either packageCount or packages, but not both.",
+    "host_name": "docs.api.shipveho.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://support.portal.sevensenders.com/support/solutions/articles/15000040309-1-1-create-order",
+    "name": "1.1. Create order : Support Portal",
+    "snippet": "Create order. TABLE OF CONTENTS. Parameters. Order URL; Order Date; Boarding complete; Language; Promised delivery date.",
+    "host_name": "support.portal.sevensenders.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://developer-forum.veeqo.com/t/creating-orders-using-php/1007",
+    "name": "Creating orders using php - API Queries (How To) - Forum",
+    "snippet": "I am trying to create the orders using php for all our reverb orders , but seems like i am missing something here can you please assist on this ...",
+    "host_name": "developer-forum.veeqo.com",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://api2.hostbillapp.com/orders/createOrderDraft.html",
+    "name": "Create Order Draft - Admin Api",
+    "snippet": "API: Create Order Draft. # createOrderDraft. Create new empty order draft. Returns draft_id for new draft ID ...",
+    "host_name": "api2.hostbillapp.com",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

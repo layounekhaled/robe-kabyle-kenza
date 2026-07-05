@@ -296,7 +296,17 @@ export async function getStopDesks(wilayaId: number) {
  * API endpoint: POST /api/v1/create/order
  * 
  * Required params: nom_client, telephone, adresse, code_wilaya, commune, montant, produit
- * Optional: telephone_2, code_postal, remarque, stock, quantite, type (1=domicile, 2=stopdesk), stop_desk, weight, fragile
+ * Optional: telephone_2, code_postal, remarque, stock, quantite, type (1=Livraison, 2=Echange, 3=PICKUP, 4=Recouvrement), stop_desk (0 or 1), weight, fragile
+ *
+ * IMPORTANT: The 'type' parameter controls the ORDER TYPE, NOT the delivery method:
+ *   type=1 → Livraison (standard delivery) ← DEFAULT for all orders
+ *   type=2 → Echange (exchange)
+ *   type=3 → PICKUP
+ *   type=4 → Recouvrement (collection)
+ *
+ * Stop desk vs home delivery is controlled by the SEPARATE 'stop_desk' parameter:
+ *   stop_desk=0 → Livraison à domicile (home delivery)
+ *   stop_desk=1 → Livraison au stop desk
  * 
  * The API accepts query parameters, not JSON body.
  * Response: {"success":true, "tracking":"EC6KZ4260607148398", "reference":"TEST-002"}
@@ -312,13 +322,12 @@ export async function createEcotrackShipment(orderData: {
   montant: number;
   produit: string;
   remarque?: string;
-  type?: "home" | "stopdesk";  // Will be converted to 1 or 2 for the API
-  stop_desk?: number;
+  type?: 1 | 2 | 3 | 4;  // 1=Livraison, 2=Echange, 3=PICKUP, 4=Recouvrement (default: 1)
+  stop_desk?: 0 | 1;    // 0=home delivery (default), 1=stop desk delivery
   quantite?: number;
   weight?: number;
   fragile?: boolean;
   reference?: string;
-  order_type?: number;  // 0 = livraison (default), 1 = échange, 2 = retour
 }) {
   try {
     // Build query parameters - the Ecotrack API uses query params, not JSON body
@@ -340,17 +349,19 @@ export async function createEcotrackShipment(orderData: {
     if (orderData.fragile) params.set("fragile", "1");
     if (orderData.reference) params.set("reference", orderData.reference);
     
-    // Type: 1 = livraison à domicile, 2 = stop desk
-    const typeValue = orderData.type === "stopdesk" ? 2 : 1;
-    params.set("type", String(typeValue));
-    
-    if (orderData.type === "stopdesk" && orderData.stop_desk) {
-      params.set("stop_desk", String(orderData.stop_desk));
-    }
+    // Type: Order operation type
+    // 1 = Livraison (standard delivery) - ALWAYS use this for normal orders
+    // 2 = Echange (exchange)
+    // 3 = PICKUP
+    // 4 = Recouvrement (collection)
+    // CRITICAL: type=1 means Livraison, NOT home delivery!
+    params.set("type", String(orderData.type ?? 1));
 
-    // Order type: 0 = livraison (default), 1 = échange, 2 = retour
-    // IMPORTANT: Must explicitly set to 0 to avoid the API defaulting to échange
-    params.set("order_type", String(orderData.order_type ?? 0));
+    // Stop desk: Delivery method (separate from order type)
+    // 0 = Livraison à domicile (home delivery) - default
+    // 1 = Livraison au stop desk
+    // CRITICAL: stop_desk controls delivery method, NOT the type parameter!
+    params.set("stop_desk", String(orderData.stop_desk ?? 0));
 
     const response = await ecotrackFetch(`/api/v1/create/order?${params.toString()}`, {
       method: "POST",
@@ -371,24 +382,49 @@ export async function createEcotrackShipment(orderData: {
 }
 
 /**
- * Update order status on Ecotrack
- * API endpoint: POST /api/v1/update/order/status
- * 
- * Available statuses on Ecotrack:
- *  - "vers station" : Colis envoyé vers la station
- *  - "en cours" : En cours de livraison
- *  - "livré" : Livré
- *  - "retourné" : Retourné
- *  - "annulé" : Annulé
+ * Update order details on Ecotrack (including status when possible)
+ * API endpoint: POST /api/v1/update/order
+ *
+ * This endpoint requires ALL mandatory fields (tracking, type, wilaya, commune, adresse, client, tel, montant)
+ * plus optional fields like status.
+ *
+ * NOTE: The Ecotrack API's status field in the update endpoint may not actually change the order status.
+ * Status changes on Ecotrack are primarily managed by the courier's physical scanning process.
+ * However, we still attempt to update it, and the local ecotrackStatus is always updated.
+ *
+ * Ecotrack status flow: prete_a_expedier → vers_hub → vers_wilaya → en_preparation → en_livraison → livré
+ * When we mark an order as "shipped" locally, we try to set the Ecotrack status to "vers_station".
  */
-export async function updateEcotrackOrderStatus(tracking: string, newStatus: string) {
+export async function updateEcotrackOrderStatus(
+  tracking: string,
+  newStatus: string,
+  orderDetails: {
+    type: number;
+    wilaya: number;
+    commune: string;
+    adresse: string;
+    client: string;
+    tel: string;
+    montant: number;
+  }
+) {
   try {
-    const params = new URLSearchParams();
-    params.set("tracking", tracking);
-    params.set("status", newStatus);
-
-    const response = await ecotrackFetch(`/api/v1/update/order/status?${params.toString()}`, {
+    const response = await ecotrackFetch("/api/v1/update/order", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        tracking,
+        type: orderDetails.type,
+        wilaya: orderDetails.wilaya,
+        commune: orderDetails.commune,
+        adresse: orderDetails.adresse,
+        client: orderDetails.client,
+        tel: orderDetails.tel,
+        montant: orderDetails.montant,
+        status: newStatus,
+      }),
     });
 
     if (!response.ok) {

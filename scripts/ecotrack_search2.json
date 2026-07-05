@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://docs.planet.com/develop/apis/orders/reference",
+    "name": "Orders API Reference | Planet Documentation",
+    "snippet": "Filter orders by state on ListOrders. Accepts multiple values treated as a logical OR via multiple query parameters, e.g. ?state=queued&state= ...",
+    "host_name": "docs.planet.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://docs.commercetools.com/api/projects/orders",
+    "name": "Orders | HTTP API",
+    "snippet": "An Order can be created from a Cart, usually after a checkout process has been completed. Learn more about how to implement order creation as part of a custom ...",
+    "host_name": "docs.commercetools.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://clickpost.github.io/slate/?hsCtaTracking=337d2141-e3c6-4f0d-9253-da1685f6deee%7C74742ad9-27cf-4300-8d0c-6e0169bba81d",
+    "name": "API Reference - GitHub Pages",
+    "snippet": "The create order Multi Seller shipment API allows uploading the package details (manifest information) into the courier partner's system for single shipment ...",
+    "host_name": "clickpost.github.io",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://github.com/PiteurStudio/CourierDZ",
+    "name": "CourierDZ is a PHP client designed to simplify the integration of",
+    "snippet": "Unified API: A consistent interface to interact with all supported providers. Order Management: Create, update, and cancel shipping orders effortlessly.",
+    "host_name": "github.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://docs.delta.exchange",
+    "name": "Delta Exchange Api: Introduction",
+    "snippet": "You can use this API to place orders on Delta Exchange and listen to market feed. We have language bindings in Shell, Python, Ruby and Nodejs!",
+    "host_name": "docs.delta.exchange",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://api-docs.ecotrak.com",
+    "name": "Ecotrak External API",
+    "snippet": "Introduction. Welcome to the API demos workspace. This workspace contains Postman collections that you can quickly demo and share our APIs with consumers.",
+    "host_name": "api-docs.ecotrak.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://tms-dsly.loadtracking.com/ws/docs/services?service=OrderService&role=-1",
+    "name": "McLeod API Documentation - OrderService",
+    "snippet": "Searches the database for orders matching the given request parameters. Additional options included to allow searching into equipment and reference numbers.",
+    "host_name": "tms-dsly.loadtracking.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://docs.cdp.coinbase.com/api-reference/international-exchange-api/rest-api/orders/create-order",
+    "name": "Create order - Coinbase Developer Documentation",
+    "snippet": "Create order · --request · https://api.international.coinbase.com/api/v1/orders · 'CB-ACCESS-KEY: <api-key>' · 'CB-ACCESS-PASSPHRASE: <api-key>' · 'CB-ACCESS-SIGN: < ...",
+    "host_name": "docs.cdp.coinbase.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.prodigi.com/print-api/docs/reference",
+    "name": "Introduction – Prodigi API Documentation",
+    "snippet": "Our guide to placing your first order walks through our order process, from authentication to submitting an order to our print network.",
+    "host_name": "www.prodigi.com",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://developer.wolt.com/docs/api",
+    "name": "API reference for Order API - Wolt for Developers",
+    "snippet": "Order API allows integrated partners to retrieve order details from Wolt and send them to their POS, KDS or other systems.",
+    "host_name": "developer.wolt.com",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

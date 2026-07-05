@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://www.accessdata.fda.gov/drugsatfda_docs/nda/2019/211675Orig1s000PharmR.pdf",
+    "name": "[PDF] Non-Clinical Review(s) - accessdata.fda.gov",
+    "snippet": "FRET) direct binding detection. Upadacitinib inhibited JAK1 with an IC50 of 0.043 µM when tested at 0.1 mM ATP. It also inhibited JAK2 (IC50 ...",
+    "host_name": "www.accessdata.fda.gov",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.researchgate.net/profile/Monica_Florescu/publication/316830186_Biophysics_for_Biomedical_and_Environmental_Sciences/links/5bb316d3a6fdccd3cb8152ce/Biophysics-for-Biomedical-and-Environmental-Sciences.pdf",
+    "name": "[PDF] Biophysics for Biomedical and Environmental Sciences",
+    "snippet": "fluorescence resonance energy transfer (FRET). Direct sensing occurs when a specific molecule is detected before and after a reaction takes place. Since ...",
+    "host_name": "www.researchgate.net",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://talents.esi.dz/scolar/pfe_list?sort=type&page=4",
+    "name": "Liste des sujets de stages de fin d'études - ESI Talents",
+    "snippet": "FRETDIRECT : FRET.DIRECT, FSI UNIV-ALGER1 : Faculté des Sciences Islamiques université d'Alger 1, FZJ : Research Center Juelich, GEN42 : GEN42, GH CONSULTING ...",
+    "host_name": "talents.esi.dz",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://justdropped.com/drops/013116com.html",
+    "name": "Justdropped.com Expired and Deleted Domain Names",
+    "snippet": "fret-direct.com frew88.com freyjasfarm.com freyjasforest.com frgarmy.com frgfortsill.com fridaymichaelkorsdeals.com fridaynightreview.com fridgeoverboard ...",
+    "host_name": "justdropped.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://developers.deliverect.com/docs/how-to-receive-order-status-updates-and-test-with-deliverect-ipad-app",
+    "name": "How to Receive Order Status Updates - Deliverect",
+    "snippet": "Configure an Order Status Webhook URL and use the Delivery Manager App (DMA) to test order status updates. Each order in Deliverect moves through statuses that ...",
+    "host_name": "developers.deliverect.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://developers.kornitx.net/api-docs/order-status-update-api",
+    "name": "Order Status API v2.2",
+    "snippet": "This version of the Order Status Update API has now been deprecated in favour of version 2.3. This documentation will remain here for information purposes ...",
+    "host_name": "developers.kornitx.net",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://docs.psrestful.com/guides/order-status/order-status-api-guide",
+    "name": "Order Status API Guide – PS RESTful API",
+    "snippet": "The Order Status service gives you near-real-time visibility into a purchase order's lifecycle from receipt through ship — without scraping ...",
+    "host_name": "docs.psrestful.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://developers.vtex.com/docs/guides/external-marketplace-update-order-status",
+    "name": "Update Order Status - VTEX Developers",
+    "snippet": "Use the request example below to update the status of an order. The description and requirement of each of the fields present in the request body are found in ...",
+    "host_name": "developers.vtex.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://developers.cart.com/docs/rest-api/6898d9f254dfb-update-an-order-status",
+    "name": "Update an Order Status | Online Store API",
+    "snippet": "Update an Order Status. Update an Order Status. put. https://www.yoursite.com/api/v1/order_statuses/{id}. Updates an order status. Request. Security: API Key ...",
+    "host_name": "developers.cart.com",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://api-explorer.se.com/en/api/order-status-v1.0",
+    "name": "Order Status Branch - Partner APIs",
+    "snippet": "This API provides current order status, order shipment schedule and also list of items in the order based on parameters passed in the request.",
+    "host_name": "api-explorer.se.com",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

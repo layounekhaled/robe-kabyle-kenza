@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://developers.kornitx.net/api-docs/order-status-update-api",
+    "name": "Order Status API v2.2",
+    "snippet": "This version of the Order Status Update API has now been deprecated in favour of version 2.3. This documentation will remain here for information purposes ...",
+    "host_name": "developers.kornitx.net",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://api-docs.omnisend.com/v3/reference/patch_orders-orderid",
+    "name": "Update order status - Omnisend API",
+    "snippet": "Update order status. ... Please view description for available statuses. You need to map your status with our statuses. ... Please view description for available ...",
+    "host_name": "api-docs.omnisend.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://api-docs.ecotrak.com",
+    "name": "Ecotrak External API",
+    "snippet": "https://api.ecotrak.com/v2/workorder/:workorder_id/status. Description. Allow customers to change the status of a work order to Not Fixed or Cancelled. Request ...",
+    "host_name": "api-docs.ecotrak.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://developers.vtex.com/docs/guides/external-marketplace-update-order-status",
+    "name": "Update Order Status - VTEX Developers",
+    "snippet": "Use the request example below to update the status of an order. The description and requirement of each of the fields present in the request body are found in ...",
+    "host_name": "developers.vtex.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://docs.psrestful.com/guides/order-status/order-status-api-guide",
+    "name": "Order Status API Guide – PS RESTful API",
+    "snippet": "The Order Status service gives you near-real-time visibility into a purchase order's lifecycle from receipt through ship — without scraping ...",
+    "host_name": "docs.psrestful.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://api-explorer.se.com/en/api/order-status-v1.0",
+    "name": "Order Status Branch - Partner APIs",
+    "snippet": "This API provides current order status, order shipment schedule and also list of items in the order based on parameters passed in the request.",
+    "host_name": "api-explorer.se.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://api.track-pod.com/index.html",
+    "name": "Track-POD API",
+    "snippet": "Set the order status to 'delivered', 'collected', or 'partially' by number. Note: The order must be scheduled for delivery.",
+    "host_name": "api.track-pod.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://docs.zid.sa/update-order-by-id",
+    "name": "Change Order Status - Zid Docs",
+    "snippet": "To deliver the order through a shipping company, you need to change the order status to ready, and send the inventory_address_id value with your ...",
+    "host_name": "docs.zid.sa",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://api.documentation.omnicado.com/operation/operation-updateordertrackingstatus",
+    "name": "Change order tracking status - omnicado API documentation",
+    "snippet": "Update tracking code and tracking number for provided Order. application/json. Body Required. Order tracking update request. id integer(int64). Omnicado order ...",
+    "host_name": "api.documentation.omnicado.com",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://api-docs.deliveroo.com/reference/patch-order-1",
+    "name": "Update Order Status - Deliveroo",
+    "snippet": "Allows a user to accept or reject an order and confirm a scheduled one. This should be called only once per order and can only be used by partners.",
+    "host_name": "api-docs.deliveroo.com",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]
