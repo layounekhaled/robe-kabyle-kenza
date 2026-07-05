@@ -15,6 +15,7 @@ import {
   X,
   ShoppingBag,
   ChevronRight,
+  Palette,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -30,6 +31,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { href: '/admin', label: 'Tableau de bord', icon: LayoutDashboard },
   { href: '/admin/products', label: 'Produits', icon: Package },
+  { href: '/admin/styles', label: 'Styles Accueil', icon: Palette },
   { href: '/admin/orders', label: 'Commandes', icon: ShoppingCart },
   { href: '/admin/store-sales', label: 'Ventes Magasin', icon: Store },
   { href: '/admin/ecotrack', label: 'Paramètres FRET.DIRECT', icon: Settings },

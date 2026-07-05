@@ -31,6 +31,14 @@ export default async function HomePage() {
     variants: Array<{ id: string; productId: string; size: string; color: string; stock: number; createdAt: string; updatedAt: string }>;
   }> = [];
 
+  // Fetch style sections from database
+  type StyleSection = {
+    id: string; title: string; description: string; imageUrl: string;
+    linkUrl: string; colorFrom: string; colorTo: string;
+    sortOrder: number; active: boolean;
+  };
+  let styles: StyleSection[] = [];
+
   try {
     const products = await db.product.findMany({
       where: {
@@ -62,6 +70,16 @@ export default async function HomePage() {
     }));
   } catch (error) {
     console.error("Failed to fetch featured products:", error);
+  }
+
+  try {
+    const styleData = await db.styleSection.findMany({
+      where: { active: true },
+      orderBy: { sortOrder: "asc" },
+    });
+    styles = styleData;
+  } catch (error) {
+    console.error("Failed to fetch styles:", error);
   }
 
   const serializedProducts = featuredProducts;
@@ -277,55 +295,39 @@ export default async function HomePage() {
               </p>
             </div>
 
+            {styles.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                {
-                  title: "Cérémonie",
-                  desc: "Robes de fête majestueuses",
-                  seed: "kabyle-ceremonie",
-                  color: "from-kabyle-red/80 to-kabyle-terracotta/80",
-                },
-                {
-                  title: "Traditionnelle",
-                  desc: "L&apos;authenticité kabyle",
-                  seed: "kabyle-tradition",
-                  color: "from-kabyle-terracotta/80 to-kabyle-gold/80",
-                },
-                {
-                  title: "Moderne",
-                  desc: "Tradition revisitée",
-                  seed: "kabyle-moderne",
-                  color: "from-kabyle-gold/80 to-kabyle-olive/80",
-                },
-                {
-                  title: "Quotidienne",
-                  desc: "Élégance au quotidien",
-                  seed: "kabyle-daily",
-                  color: "from-kabyle-olive/80 to-kabyle-dark/60",
-                },
-              ].map((style) => (
+              {styles.map((style) => (
                 <Link
-                  key={style.title}
-                  href="/catalog"
+                  key={style.id}
+                  href={style.linkUrl}
                   className="group relative aspect-[3/4] rounded-xl overflow-hidden"
                 >
                   <Image
-                    src={`https://picsum.photos/seed/${style.seed}/400/530`}
+                    src={style.imageUrl}
                     alt={`Style ${style.title}`}
                     fill
                     sizes="(max-width: 768px) 50vw, 25vw"
                     className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    unoptimized={style.imageUrl.includes('picsum.photos')}
                   />
                   <div
-                    className={`absolute inset-0 bg-gradient-to-t ${style.color} opacity-60 group-hover:opacity-75 transition-opacity`}
+                    className={`absolute inset-0 bg-gradient-to-t ${style.colorFrom} ${style.colorTo} opacity-60 group-hover:opacity-75 transition-opacity`}
                   />
                   <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                     <h3 className="text-lg font-bold">{style.title}</h3>
-                    <p className="text-sm text-white/80">{style.desc}</p>
+                    <p className="text-sm text-white/80">{style.description}</p>
                   </div>
                 </Link>
               ))}
             </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">
+                  Aucun style pour le moment.
+                </p>
+              </div>
+            )}
           </div>
         </section>
 
