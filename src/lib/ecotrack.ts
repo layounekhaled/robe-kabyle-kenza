@@ -382,18 +382,115 @@ export async function createEcotrackShipment(orderData: {
 }
 
 /**
+ * Get orders list from Ecotrack
+ * API endpoint: GET /api/v1/get/orders
+ *
+ * Returns paginated list of orders with full details including:
+ * - tracking, reference, client, phone, adresse
+ * - type_id (1=Livraison, 2=Echange)
+ * - status (prete_a_expedier, vers_hub, vers_wilaya, en_preparation, en_livraison, livré, etc.)
+ * - process_state_id (numeric status code)
+ * - global_status (en_process, livre, retour)
+ */
+export async function getEcotrackOrders(page: number = 1): Promise<{
+  current_page: number;
+  data: EcotrackOrder[];
+}> {
+  try {
+    const response = await ecotrackFetch(`/api/v1/get/orders?page=${page}`);
+    if (!response.ok) {
+      throw new Error(`Ecotrack API error: ${response.status} ${response.statusText}`);
+    }
+    const data = await response.json();
+    return data as { current_page: number; data: EcotrackOrder[] };
+  } catch (error) {
+    console.error("Error fetching Ecotrack orders:", error);
+    throw error;
+  }
+}
+
+/**
+ * Ecotrack order type from GET /api/v1/get/orders
+ */
+export interface EcotrackOrder {
+  tracking: string;
+  reference: string | null;
+  client: string;
+  phone: string;
+  phone_2: string | null;
+  adresse: string;
+  stop_desk: number;
+  commune_id: number;
+  wilaya_id: number;
+  montant: string;
+  tarif_prestation: string;
+  tarif_retour: string;
+  type_id: number;  // 1=Livraison, 2=Echange
+  created_at: string;
+  payment_id: string | null;
+  return_id: string | null;
+  process_state_id: number;
+  livred_at: string | null;
+  exchanged_at: string | null;
+  return_asked_at: string | null;
+  last_updated_at: string;
+  driver_name: string;
+  driver_phone: string;
+  products: string;
+  status: string;  // prete_a_expedier, vers_hub, vers_wilaya, en_preparation, en_livraison, livré, etc.
+  global_status: string;  // en_process, livre, retour
+  status_reason: unknown[];
+  order_products: unknown[];
+}
+
+/**
+ * Get a specific order from Ecotrack by tracking number
+ * Uses the get/orders endpoint and finds the matching order
+ */
+export async function getEcotrackOrderByTracking(tracking: string): Promise<EcotrackOrder | null> {
+  try {
+    // Search through pages to find the order
+    let page = 1;
+    const maxPages = 10; // Safety limit
+    
+    while (page <= maxPages) {
+      const result = await getEcotrackOrders(page);
+      const order = result.data.find(o => o.tracking === tracking);
+      if (order) return order;
+      
+      // If we got fewer orders than expected, we've reached the end
+      if (result.data.length === 0) break;
+      page++;
+    }
+    return null;
+  } catch (error) {
+    console.error(`Error fetching Ecotrack order ${tracking}:`, error);
+    return null;
+  }
+}
+
+/**
  * Update order details on Ecotrack (including status when possible)
  * API endpoint: POST /api/v1/update/order
  *
  * This endpoint requires ALL mandatory fields (tracking, type, wilaya, commune, adresse, client, tel, montant)
  * plus optional fields like status.
  *
- * NOTE: The Ecotrack API's status field in the update endpoint may not actually change the order status.
- * Status changes on Ecotrack are primarily managed by the courier's physical scanning process.
- * However, we still attempt to update it, and the local ecotrackStatus is always updated.
+ * IMPORTANT FINDINGS FROM API TESTING (July 2026):
+ * - The update/order endpoint accepts a "status" parameter and returns {success: true}
+ * - HOWEVER, the status field does NOT actually change the order's status on Ecotrack
+ * - The Ecotrack public API (v1.1.0) does NOT provide a dedicated endpoint to
+ *   validate/confirm expedition or change order status
+ * - Status changes on Ecotrack are controlled by the courier's physical scanning process
+ * - The "Valider l'expédition" action in the Ecotrack dashboard is a manual step
+ *   that cannot be automated through the public API
  *
- * Ecotrack status flow: prete_a_expedier → vers_hub → vers_wilaya → en_preparation → en_livraison → livré
- * When we mark an order as "shipped" locally, we try to set the Ecotrack status to "vers_station".
+ * Ecotrack status flow (from API testing):
+ *   prete_a_expedier (1) → vers_hub (60) → en_preparation/vers_wilaya (80/83) → en_livraison (92) → livré (200+)
+ *
+ * We still call this endpoint for documentation/audit purposes, and we always
+ * update the local ecotrackStatus field regardless of whether the API actually
+ * changes the status on Ecotrack's side.
  */
 export async function updateEcotrackOrderStatus(
   tracking: string,
@@ -409,6 +506,8 @@ export async function updateEcotrackOrderStatus(
   }
 ) {
   try {
+    console.log(`[ECOTRACK] Attempting to update order ${tracking} status to "${newStatus}"`);
+    
     const response = await ecotrackFetch("/api/v1/update/order", {
       method: "POST",
       headers: {
@@ -429,15 +528,33 @@ export async function updateEcotrackOrderStatus(
 
     if (!response.ok) {
       const errorBody = await response.text();
+      console.error(`[ECOTRACK] Update failed for ${tracking}: ${response.status} - ${errorBody}`);
       throw new Error(
         `Ecotrack API error: ${response.status} ${response.statusText} - ${errorBody}`
       );
     }
 
     const data = await response.json();
+    console.log(`[ECOTRACK] Update response for ${tracking}:`, JSON.stringify(data));
+    
+    // Verify the status actually changed by fetching the order
+    const updatedOrder = await getEcotrackOrderByTracking(tracking);
+    if (updatedOrder) {
+      console.log(`[ECOTRACK] Current status of ${tracking} on Ecotrack: "${updatedOrder.status}" (process_state_id: ${updatedOrder.process_state_id})`);
+      if (updatedOrder.status !== newStatus) {
+        console.warn(`[ECOTRACK] WARNING: Status on Ecotrack ("${updatedOrder.status}") does not match requested status ("${newStatus}"). The Ecotrack public API does not support status changes via the update endpoint. The status will need to be changed manually on the Ecotrack dashboard.`);
+      }
+      return { 
+        success: data.success, 
+        message: data.message,
+        actualStatus: updatedOrder.status,
+        statusChanged: updatedOrder.status === newStatus
+      };
+    }
+    
     return data as { success: boolean; message?: string };
   } catch (error) {
-    console.error(`Error updating Ecotrack order status for ${tracking}:`, error);
+    console.error(`[ECOTRACK] Error updating order status for ${tracking}:`, error);
     throw error;
   }
 }

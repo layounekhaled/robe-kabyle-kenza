@@ -112,3 +112,26 @@ Stage Summary:
 - Products display correctly on first render on Vercel - no more stuck skeleton placeholders
 - Same visual design preserved (Kabyle terracotta/gold/olive theme)
 - Commit: 02c3c8fb8eed1dc40b16295e4d5245c6ff8bfc4b
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix Ecotrack integration - order type and status synchronization
+
+Work Log:
+- Extensively tested the Ecotrack API (fret.ecotrack.dz) to understand all available endpoints
+- Discovered that type=1 correctly creates Livraison orders (type_id=1) and type=2 creates Echange (type_id=2)
+- Confirmed that the Ecotrack public API (v1.1.0) does NOT have a "validate expedition" endpoint
+- Tested update/order endpoint with various status values - it accepts status but does NOT actually change the order status
+- Discovered the GET /api/v1/get/orders endpoint which returns full order details including actual status and process_state_id
+- Added getEcotrackOrders() and getEcotrackOrderByTracking() functions to ecotrack.ts
+- Updated updateEcotrackOrderStatus() to verify if status actually changed after update call
+- Updated orders API route to use real Ecotrack status when syncing
+- Added warning toast on frontend when admin marks order as "shipped" but Ecotrack status hasn't changed
+- Improved logging throughout with [ECOTRACK] prefix for easier debugging
+
+Stage Summary:
+- The Ecotrack public API does NOT support status changes or "valider l'expédition" programmatically
+- Orders ARE created correctly as "Livraison" (type=1) - this was already working
+- When admin changes status to "shipped", the system now attempts the update AND fetches the real status
+- Admin gets a warning toast if Ecotrack status needs manual validation
+- Sync Ecotrack now uses the more accurate get/orders endpoint with process_state_id

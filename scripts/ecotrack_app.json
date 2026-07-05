@@ -1,0 +1,29 @@
+{
+  "code": 200,
+  "data": {
+    "description": "",
+    "external": {
+      "icon": {
+        "https://www.gstatic.com/android/market_images/web/favicon_v3.ico": {}
+      }
+    },
+    "html": "<html><head><meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"shortcut icon\" href=\"//www.gstatic.com/android/market_images/web/favicon_v3.ico\"><title>Not Found</title>\n  <style nonce=\"ODO2e3GBO7Hiz2PxexaPgg\">\n  body {\n    font-family: arial,sans-serif;\n    margin: 50px 10px;\n    padding: 0;\n    text-align: center;\n  }\n  img {\n    border: 0\n  }\n  .rounded {\n    -webkit-border-radius: 5px;\n    -moz-border-radius: 5px;\n    border-radius: 5px;\n  }\n  #content {\n    margin: 0 auto;\n    width: 750px;\n  }\n  #error-section {\n    background-color: #d2e3fb;\n    border: 1px solid #a1b4d9;\n    color: #666;\n    font-weight: bold;\n    padding: 12px 0;\n  }\n  #search-section {\n    border: 1px solid #a1b4d9;\n    margin: 10px 0;\n  }\n  #play-logo {\n    float: left;\n    margin: 17px;\n  }\n  #search-box {\n    float: left;\n    margin: 20px;\n  }\n  #debug {\n    margin-top: 50px;\n    text-align:left;\n  }\n  </style>\n  </head><body text=\"#000000\" bgcolor=\"#ffffff\" dir=\"ltr\"><div id=\"content\"><div id=\"error-section\" class=\"uaxL4e\">We're sorry, the requested URL was not found on this server.</div><div id=\"search-section\" class=\"uaxL4e\"><a href=\"/store\"><img id=\"play-logo\" alt=\"Google Play\" src=\"//www.gstatic.com/android/market_images/web/play_prism_hlock_v2_1x.png\" srcset=\"//www.gstatic.com/android/market_images/web/play_prism_hlock_v2_2x.png 2x\"></a><form id=\"search-box\" method=\"get\" action=\"/store/search\" style=\"margin: 32px 10px;\"><input type=\"text\" value=\"\" name=\"q\"><input type=\"submit\" value=\"Search\"></form><div style=\"clear:both\"></div></div></div></body></html>",
+    "httpStatus": 404,
+    "httpStatusText": "",
+    "metadata": {
+      "viewport": "width=device-width, initial-scale=1"
+    },
+    "title": "Not Found",
+    "url": "https://play.google.com/store/apps/details",
+    "usage": {
+      "tokens": 530
+    },
+    "warning": "Target URL returned error 404: Not Found"
+  },
+  "meta": {
+    "usage": {
+      "tokens": 530
+    }
+  },
+  "status": 20000
+}

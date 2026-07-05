@@ -169,9 +169,27 @@ export default function OrdersPage() {
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) {
-        toast.success('Statut de la commande mis à jour');
         const data = await res.json();
-        setSelectedOrder(data.order);
+        const updatedOrder = data.order;
+        
+        toast.success('Statut de la commande mis à jour');
+        
+        // If status changed to "shipped" and order has Ecotrack tracking,
+        // warn the admin that they need to validate the expedition on Ecotrack
+        if (newStatus === 'shipped' && updatedOrder?.ecotrackTracking) {
+          // Check if Ecotrack status was actually updated
+          if (updatedOrder.ecotrackStatus && updatedOrder.ecotrackStatus === 'prete_a_expedier') {
+            toast.warning('Action requise : Veuillez valider l\'expédition manuellement sur le dashboard FRET.DIRECT / Ecotrack. L\'API publique ne permet pas de changer le statut automatiquement.', {
+              duration: 8000,
+            });
+          } else if (updatedOrder.ecotrackStatus && updatedOrder.ecotrackStatus !== 'vers_station') {
+            toast.info(`Statut Ecotrack actuel : "${updatedOrder.ecotrackStatus}". Vérifiez sur le dashboard FRET.DIRECT si une validation est nécessaire.`, {
+              duration: 6000,
+            });
+          }
+        }
+        
+        setSelectedOrder(updatedOrder);
         fetchOrders(pagination.page);
       } else {
         const data = await res.json();
