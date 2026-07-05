@@ -1144,7 +1144,7 @@ function OrderFormContent() {
                     <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Package className="h-3 w-3" />
-                        Livraison <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="hover:underline font-medium">FRET.DIRECT</a>
+                        Livraison <a href="https://fret.direct" target="_blank" rel="noopener noreferrer" className="hover:underline font-medium">FRET.DIRECT</a>
                       </span>
                       <span className="flex items-center gap-1">
                         <Check className="h-3 w-3" />

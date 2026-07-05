@@ -158,8 +158,8 @@ export default function EcotrackPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold">Paramètres <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a></h2>
-        <p className="text-muted-foreground">Configuration de l&apos;intégration <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a> pour la livraison</p>
+        <h2 className="text-2xl font-bold">Paramètres <a href="https://fret.direct" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a></h2>
+        <p className="text-muted-foreground">Configuration de l&apos;intégration <a href="https://fret.direct" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a> pour la livraison</p>
       </div>
 
       {/* Connection Status */}
@@ -224,7 +224,7 @@ export default function EcotrackPage() {
             Configuration API
           </CardTitle>
           <CardDescription>
-            Entrez vos identifiants API <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a> pour activer la livraison
+            Entrez vos identifiants API <a href="https://fret.direct" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a> pour activer la livraison
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -241,7 +241,7 @@ export default function EcotrackPage() {
               onChange={(e) => setFormApiUrl(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              L&apos;URL de base de l&apos;API <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a>
+              L&apos;URL de base de l&apos;API <a href="https://fret.direct" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a>
             </p>
           </div>
 
@@ -273,7 +273,7 @@ export default function EcotrackPage() {
           {/* Active Toggle */}
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label>Activer l&apos;intégration <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a></Label>
+              <Label>Activer l&apos;intégration <a href="https://fret.direct" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a></Label>
               <p className="text-xs text-muted-foreground">
                 Active ou désactive la création automatique d&apos;expéditions
               </p>
@@ -327,11 +327,11 @@ export default function EcotrackPage() {
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
           <p>
-            <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">FRET.DIRECT</a> est un service de livraison en Algérie qui permet d&apos;expédier
+            <a href="https://fret.direct" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">FRET.DIRECT</a> est un service de livraison en Algérie qui permet d&apos;expédier
             des colis vers toutes les wilayas.
           </p>
           <p>
-            Lorsqu&apos;une commande passe au statut &quot;Confirmée&quot;, une expédition <a href="https://fret.ecotrack.dz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a> est
+            Lorsqu&apos;une commande passe au statut &quot;Confirmée&quot;, une expédition <a href="https://fret.direct" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">FRET.DIRECT</a> est
             automatiquement créée si l&apos;intégration est active et configurée.
           </p>
           <p>
