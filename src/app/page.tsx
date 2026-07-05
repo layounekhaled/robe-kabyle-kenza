@@ -59,7 +59,7 @@ export default async function HomePage() {
               <div className="space-y-6 text-center lg:text-left">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-kabyle-terracotta/10 text-kabyle-terracotta text-sm font-medium">
                   <Sparkles className="h-4 w-4" />
-                  Collection 2025
+                  Nouvelle collection
                 </div>
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-kabyle-dark leading-tight">
                   Robes Kabyles{" "}
@@ -104,7 +104,7 @@ export default async function HomePage() {
                   <div className="relative h-full w-full rounded-2xl overflow-hidden shadow-2xl">
                     <Image
                       src="/kabyle-banner.png"
-                      alt="Robe Kabyle - Collection 2025"
+                      alt="Robe Kabyle - Nouvelle collection"
                       fill
                       sizes="50vw"
                       className="object-cover"
