@@ -4,7 +4,8 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, LogOut, ShoppingBag } from "lucide-react";
+import Image from 'next/image';
+import { Loader2, LogOut } from "lucide-react";
 
 export default function POSLayout({
   children,
@@ -62,7 +63,15 @@ export default function POSLayout({
       {/* Top Bar */}
       <header className="h-14 border-b bg-kabyle-terracotta text-kabyle-cream flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-3">
-          <ShoppingBag className="w-6 h-6" />
+          <div className="relative w-8 h-8 rounded overflow-hidden">
+            <Image
+              src="/logo-kabyle.png"
+              alt="Robe Kabyle Kenza"
+              fill
+              className="object-cover"
+              sizes="32px"
+            />
+          </div>
           <h1 className="text-lg font-bold tracking-tight">
             Caisse - Robe Kabyle Kenza
           </h1>

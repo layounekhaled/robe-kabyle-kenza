@@ -308,7 +308,9 @@ export async function getStopDesks(wilayaId: number) {
  *   stop_desk=0 → Livraison à domicile (home delivery)
  *   stop_desk=1 → Livraison au stop desk
  * 
- * The API accepts query parameters, not JSON body.
+ * CRITICAL: The API expects parameters in the POST body as JSON, NOT as query parameters.
+ * Sending parameters as query params causes the API to ignore the 'type' field,
+ * resulting in orders being created as "échange" instead of "livraison".
  * Response: {"success":true, "tracking":"EC6KZ4260607148398", "reference":"TEST-002"}
  */
 export async function createEcotrackShipment(orderData: {
@@ -330,43 +332,50 @@ export async function createEcotrackShipment(orderData: {
   reference?: string;
 }) {
   try {
-    // Build query parameters - the Ecotrack API uses query params, not JSON body
-    const params = new URLSearchParams();
-    params.set("nom_client", orderData.nom_client);
-    params.set("telephone", orderData.telephone);
-    params.set("adresse", orderData.adresse);
-    params.set("code_wilaya", String(orderData.code_wilaya));
-    params.set("commune", orderData.commune);
-    params.set("montant", String(orderData.montant));
-    params.set("produit", orderData.produit);
-    
-    // Optional params
-    if (orderData.telephone_2) params.set("telephone_2", orderData.telephone_2);
-    if (orderData.code_postal) params.set("code_postal", orderData.code_postal);
-    if (orderData.remarque) params.set("remarque", orderData.remarque);
-    if (orderData.quantite) params.set("quantite", String(orderData.quantite));
-    if (orderData.weight) params.set("weight", String(orderData.weight));
-    if (orderData.fragile) params.set("fragile", "1");
-    if (orderData.reference) params.set("reference", orderData.reference);
-    
-    // Type: Order operation type
-    // 1 = Livraison (standard delivery) - ALWAYS use this for normal orders
-    // 2 = Echange (exchange)
-    // 3 = PICKUP
-    // 4 = Recouvrement (collection)
-    // CRITICAL: type=1 means Livraison, NOT home delivery!
-    params.set("type", String(orderData.type ?? 1));
+    // Build the request body as JSON
+    // CRITICAL: The Ecotrack API expects parameters in the POST body as JSON,
+    // NOT as query parameters. Sending them as query params causes the API
+    // to ignore certain fields (like 'type'), resulting in orders being
+    // created as "échange" instead of "livraison".
+    const body: Record<string, unknown> = {
+      nom_client: orderData.nom_client,
+      telephone: orderData.telephone,
+      adresse: orderData.adresse,
+      code_wilaya: orderData.code_wilaya,
+      commune: orderData.commune,
+      montant: orderData.montant,
+      produit: orderData.produit,
 
-    // Stop desk: Delivery method (separate from order type)
-    // 0 = Livraison à domicile (home delivery) - default
-    // 1 = Livraison au stop desk
-    // CRITICAL: stop_desk controls delivery method, NOT the type parameter!
-    params.set("stop_desk", String(orderData.stop_desk ?? 0));
+      // Type: Order operation type
+      // 1 = Livraison (standard delivery) - ALWAYS use this for normal orders
+      // 2 = Echange (exchange)
+      // 3 = PICKUP
+      // 4 = Recouvrement (collection)
+      // CRITICAL: type=1 means Livraison, NOT home delivery!
+      type: orderData.type ?? 1,
 
-    const response = await ecotrackFetch(`/api/v1/create/order?${params.toString()}`, {
+      // Stop desk: Delivery method (separate from order type)
+      // 0 = Livraison à domicile (home delivery) - default
+      // 1 = Livraison au stop desk
+      stop_desk: orderData.stop_desk ?? 0,
+    };
+
+    // Optional params - only include if provided
+    if (orderData.telephone_2) body.telephone_2 = orderData.telephone_2;
+    if (orderData.code_postal) body.code_postal = orderData.code_postal;
+    if (orderData.remarque) body.remarque = orderData.remarque;
+    if (orderData.quantite) body.quantite = orderData.quantite;
+    if (orderData.weight) body.weight = orderData.weight;
+    if (orderData.fragile) body.fragile = 1;
+    if (orderData.reference) body.reference = orderData.reference;
+
+    console.log(`[ECOTRACK] Creating order with type=${body.type}, stop_desk=${body.stop_desk}`);
+
+    const response = await ecotrackFetch(`/api/v1/create/order`, {
       method: "POST",
+      body: JSON.stringify(body),
     });
-    
+
     if (!response.ok) {
       const errorBody = await response.text();
       throw new Error(
@@ -374,6 +383,7 @@ export async function createEcotrackShipment(orderData: {
       );
     }
     const data = await response.json();
+    console.log(`[ECOTRACK] Create order response:`, JSON.stringify(data));
     return data as { success: boolean; tracking: string; reference: string };
   } catch (error) {
     console.error("Error creating Ecotrack shipment:", error);
@@ -477,7 +487,7 @@ export async function getEcotrackOrderByTracking(tracking: string): Promise<Ecot
  * After calling this endpoint, the order status changes from "prete_a_expedier" to
  * "vers_station" / "vers_hub" and the order can no longer be modified or deleted.
  *
- * Parameters (query params):
+ * Parameters (JSON body):
  *   - tracking (required): The tracking number of the order
  *   - ask_collection (optional): 1 = request pickup (ramassage), 0 = no pickup
  *
@@ -492,12 +502,14 @@ export async function validateEcotrackExpedition(
   try {
     console.log(`[ECOTRACK] Validating expedition for order ${tracking}`);
 
-    const params = new URLSearchParams();
-    params.set("tracking", tracking);
-    params.set("ask_collection", String(askCollection));
+    const body = {
+      tracking,
+      ask_collection: askCollection,
+    };
 
-    const response = await ecotrackFetch(`/api/v1/valid/order?${params.toString()}`, {
+    const response = await ecotrackFetch(`/api/v1/valid/order`, {
       method: "POST",
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {

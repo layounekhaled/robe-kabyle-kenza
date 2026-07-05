@@ -39,13 +39,14 @@ export default function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative h-9 w-9 overflow-hidden rounded-lg transition-transform group-hover:scale-105">
+            <div className="relative h-10 w-10 overflow-hidden rounded-lg transition-transform group-hover:scale-105">
               <Image
                 src="/logo-kabyle.png"
                 alt="Robe Kabyle Kenza"
                 fill
                 className="object-cover"
-                sizes="36px"
+                sizes="40px"
+                priority
               />
             </div>
             <div className="hidden sm:block">

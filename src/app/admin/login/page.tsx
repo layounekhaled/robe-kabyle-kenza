@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Lock, Mail, ShoppingBag } from 'lucide-react';
+import { Loader2, Lock, Mail } from 'lucide-react';
+import Image from 'next/image';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -47,8 +48,15 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md">
         {/* Branding */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-            <ShoppingBag className="h-8 w-8 text-primary" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full overflow-hidden mb-4">
+            <Image
+              src="/logo-kabyle.png"
+              alt="Robe Kabyle Kenza"
+              width={80}
+              height={80}
+              className="object-cover"
+              priority
+            />
           </div>
           <h1 className="text-2xl font-bold text-foreground">Robe Kabyle Kenza</h1>
           <p className="text-muted-foreground mt-1">Administration</p>

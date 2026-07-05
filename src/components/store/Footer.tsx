@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Shirt, MapPin, Phone, Facebook, Instagram } from "lucide-react";
+import Image from "next/image";
+import { MapPin, Phone, Facebook, Instagram } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -12,8 +13,14 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-kabyle-terracotta text-white">
-                <Shirt className="h-5 w-5" />
+              <div className="relative h-9 w-9 rounded-lg overflow-hidden">
+                <Image
+                  src="/logo-kabyle.png"
+                  alt="Robe Kabyle Kenza"
+                  fill
+                  className="object-cover"
+                  sizes="36px"
+                />
               </div>
               <span className="text-lg font-bold text-white">
                 Robe Kabyle Kenza

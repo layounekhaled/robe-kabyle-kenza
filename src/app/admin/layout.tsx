@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import {
   LayoutDashboard,
   Package,
@@ -13,7 +14,6 @@ import {
   LogOut,
   Menu,
   X,
-  ShoppingBag,
   ChevronRight,
   Palette,
 } from 'lucide-react';
@@ -107,8 +107,14 @@ export default function AdminLayout({
       >
         {/* Sidebar Header */}
         <div className="h-16 flex items-center gap-3 px-4 border-b border-border">
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10">
-            <ShoppingBag className="h-5 w-5 text-primary" />
+          <div className="relative w-9 h-9 rounded-lg overflow-hidden">
+            <Image
+              src="/logo-kabyle.png"
+              alt="Robe Kabyle Kenza"
+              fill
+              className="object-cover"
+              sizes="36px"
+            />
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-sm font-semibold text-foreground truncate">Robes Kabyles</h2>
