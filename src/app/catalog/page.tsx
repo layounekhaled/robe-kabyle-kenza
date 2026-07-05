@@ -7,42 +7,54 @@ import { db } from "@/lib/db";
 export const dynamic = 'force-dynamic';
 
 export default async function CatalogPage() {
-  // Fetch initial products data in the server component
-  const [products, total] = await Promise.all([
-    db.product.findMany({
-      where: {
-        active: true,
-      },
-      include: {
-        images: { orderBy: { sortOrder: "asc" } },
-        variants: true,
-      },
-      orderBy: { createdAt: "desc" },
-      skip: 0,
-      take: 12,
-    }),
-    db.product.count({
-      where: { active: true },
-    }),
-  ]);
+  let serializedProducts: Array<{
+    id: string; reference: string; name: string; description: string | null;
+    price: number; fabric: string | null; featured: boolean; active: boolean;
+    createdAt: string; updatedAt: string;
+    images: Array<{ id: string; url: string; alt: string | null; sortOrder: number; productId: string; createdAt: string }>;
+    variants: Array<{ id: string; productId: string; size: string; color: string; stock: number; createdAt: string; updatedAt: string }>;
+  }> = [];
+  let totalPages = 1;
 
-  const totalPages = Math.ceil(total / 12);
+  try {
+    const [products, total] = await Promise.all([
+      db.product.findMany({
+        where: {
+          active: true,
+        },
+        include: {
+          images: { orderBy: { sortOrder: "asc" } },
+          variants: true,
+        },
+        orderBy: { createdAt: "desc" },
+        skip: 0,
+        take: 12,
+      }),
+      db.product.count({
+        where: { active: true },
+      }),
+    ]);
 
-  // Serialize for client components (convert Date objects to strings)
-  const serializedProducts = products.map((p) => ({
-    ...p,
-    createdAt: p.createdAt.toISOString(),
-    updatedAt: p.updatedAt.toISOString(),
-    images: p.images.map((img) => ({
-      ...img,
-      createdAt: img.createdAt.toISOString(),
-    })),
-    variants: p.variants.map((v) => ({
-      ...v,
-      createdAt: v.createdAt.toISOString(),
-      updatedAt: v.updatedAt.toISOString(),
-    })),
-  }));
+    totalPages = Math.ceil(total / 12);
+
+    // Serialize for client components (convert Date objects to strings)
+    serializedProducts = products.map((p) => ({
+      ...p,
+      createdAt: p.createdAt.toISOString(),
+      updatedAt: p.updatedAt.toISOString(),
+      images: p.images.map((img) => ({
+        ...img,
+        createdAt: img.createdAt.toISOString(),
+      })),
+      variants: p.variants.map((v) => ({
+        ...v,
+        createdAt: v.createdAt.toISOString(),
+        updatedAt: v.updatedAt.toISOString(),
+      })),
+    }));
+  } catch (error) {
+    console.error("Failed to fetch catalog products:", error);
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

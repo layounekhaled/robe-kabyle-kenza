@@ -20,34 +20,48 @@ export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   // Fetch featured products directly in the server component
-  const featuredProducts = await db.product.findMany({
-    where: {
-      featured: true,
-      active: true,
-    },
-    include: {
-      images: { orderBy: { sortOrder: "asc" } },
-      variants: true,
-    },
-    orderBy: { createdAt: "desc" },
-    take: 6,
-  });
+  let featuredProducts: Array<{
+    id: string; reference: string; name: string; description: string | null;
+    price: number; fabric: string | null; featured: boolean; active: boolean;
+    createdAt: string; updatedAt: string;
+    images: Array<{ id: string; url: string; alt: string | null; sortOrder: number; productId: string; createdAt: string }>;
+    variants: Array<{ id: string; productId: string; size: string; color: string; stock: number; createdAt: string; updatedAt: string }>;
+  }> = [];
 
-  // Serialize for client components (convert Date objects to strings)
-  const serializedProducts = featuredProducts.map((p) => ({
-    ...p,
-    createdAt: p.createdAt.toISOString(),
-    updatedAt: p.updatedAt.toISOString(),
-    images: p.images.map((img) => ({
-      ...img,
-      createdAt: img.createdAt.toISOString(),
-    })),
-    variants: p.variants.map((v) => ({
-      ...v,
-      createdAt: v.createdAt.toISOString(),
-      updatedAt: v.updatedAt.toISOString(),
-    })),
-  }));
+  try {
+    const products = await db.product.findMany({
+      where: {
+        featured: true,
+        active: true,
+      },
+      include: {
+        images: { orderBy: { sortOrder: "asc" } },
+        variants: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+    });
+
+    // Serialize for client components (convert Date objects to strings)
+    featuredProducts = products.map((p) => ({
+      ...p,
+      createdAt: p.createdAt.toISOString(),
+      updatedAt: p.updatedAt.toISOString(),
+      images: p.images.map((img) => ({
+        ...img,
+        createdAt: img.createdAt.toISOString(),
+      })),
+      variants: p.variants.map((v) => ({
+        ...v,
+        createdAt: v.createdAt.toISOString(),
+        updatedAt: v.updatedAt.toISOString(),
+      })),
+    }));
+  } catch (error) {
+    console.error("Failed to fetch featured products:", error);
+  }
+
+  const serializedProducts = featuredProducts;
 
   return (
     <div className="min-h-screen flex flex-col">
