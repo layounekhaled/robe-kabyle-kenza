@@ -470,31 +470,72 @@ export async function getEcotrackOrderByTracking(tracking: string): Promise<Ecot
 }
 
 /**
- * Update order details on Ecotrack (including status when possible)
+ * Validate and ship (expédier) an order on Ecotrack
+ * API endpoint: POST /api/v1/valid/order
+ *
+ * This is the equivalent of clicking "Valider l'expédition" in the Ecotrack dashboard.
+ * After calling this endpoint, the order status changes from "prete_a_expedier" to
+ * "vers_station" / "vers_hub" and the order can no longer be modified or deleted.
+ *
+ * Parameters (query params):
+ *   - tracking (required): The tracking number of the order
+ *   - ask_collection (optional): 1 = request pickup (ramassage), 0 = no pickup
+ *
+ * IMPORTANT: This must be called when the local order status changes to "shipped".
+ * The previous approach of using /api/v1/update/order with a status parameter did NOT
+ * actually validate the expedition — it only updated order details.
+ */
+export async function validateEcotrackExpedition(
+  tracking: string,
+  askCollection: 0 | 1 = 0
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    console.log(`[ECOTRACK] Validating expedition for order ${tracking}`);
+
+    const params = new URLSearchParams();
+    params.set("tracking", tracking);
+    params.set("ask_collection", String(askCollection));
+
+    const response = await ecotrackFetch(`/api/v1/valid/order?${params.toString()}`, {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(`[ECOTRACK] Validate expedition failed for ${tracking}: ${response.status} - ${errorBody}`);
+      throw new Error(
+        `Ecotrack API error: ${response.status} ${response.statusText} - ${errorBody}`
+      );
+    }
+
+    const data = await response.json();
+    console.log(`[ECOTRACK] Validate expedition response for ${tracking}:`, JSON.stringify(data));
+
+    // Verify the status changed by fetching the order
+    const updatedOrder = await getEcotrackOrderByTracking(tracking);
+    if (updatedOrder) {
+      console.log(`[ECOTRACK] Order ${tracking} status after validation: "${updatedOrder.status}" (process_state_id: ${updatedOrder.process_state_id})`);
+    }
+
+    return data as { success: boolean; message?: string };
+  } catch (error) {
+    console.error(`[ECOTRACK] Error validating expedition for ${tracking}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Update order details on Ecotrack (address, phone, etc. — NOT status)
  * API endpoint: POST /api/v1/update/order
  *
- * This endpoint requires ALL mandatory fields (tracking, type, wilaya, commune, adresse, client, tel, montant)
- * plus optional fields like status.
+ * This endpoint can only be used BEFORE the order is validated (expédiée).
+ * It updates order details like address, phone, amount, etc.
+ * It does NOT change the order status — use validateEcotrackExpedition for that.
  *
- * IMPORTANT FINDINGS FROM API TESTING (July 2026):
- * - The update/order endpoint accepts a "status" parameter and returns {success: true}
- * - HOWEVER, the status field does NOT actually change the order's status on Ecotrack
- * - The Ecotrack public API (v1.1.0) does NOT provide a dedicated endpoint to
- *   validate/confirm expedition or change order status
- * - Status changes on Ecotrack are controlled by the courier's physical scanning process
- * - The "Valider l'expédition" action in the Ecotrack dashboard is a manual step
- *   that cannot be automated through the public API
- *
- * Ecotrack status flow (from API testing):
- *   prete_a_expedier (1) → vers_hub (60) → en_preparation/vers_wilaya (80/83) → en_livraison (92) → livré (200+)
- *
- * We still call this endpoint for documentation/audit purposes, and we always
- * update the local ecotrackStatus field regardless of whether the API actually
- * changes the status on Ecotrack's side.
+ * Required fields: tracking, type, wilaya, commune, adresse, client, tel, montant
  */
-export async function updateEcotrackOrderStatus(
+export async function updateEcotrackOrder(
   tracking: string,
-  newStatus: string,
   orderDetails: {
     type: number;
     wilaya: number;
@@ -506,8 +547,8 @@ export async function updateEcotrackOrderStatus(
   }
 ) {
   try {
-    console.log(`[ECOTRACK] Attempting to update order ${tracking} status to "${newStatus}"`);
-    
+    console.log(`[ECOTRACK] Updating order details for ${tracking}`);
+
     const response = await ecotrackFetch("/api/v1/update/order", {
       method: "POST",
       headers: {
@@ -522,7 +563,6 @@ export async function updateEcotrackOrderStatus(
         client: orderDetails.client,
         tel: orderDetails.tel,
         montant: orderDetails.montant,
-        status: newStatus,
       }),
     });
 
@@ -536,25 +576,10 @@ export async function updateEcotrackOrderStatus(
 
     const data = await response.json();
     console.log(`[ECOTRACK] Update response for ${tracking}:`, JSON.stringify(data));
-    
-    // Verify the status actually changed by fetching the order
-    const updatedOrder = await getEcotrackOrderByTracking(tracking);
-    if (updatedOrder) {
-      console.log(`[ECOTRACK] Current status of ${tracking} on Ecotrack: "${updatedOrder.status}" (process_state_id: ${updatedOrder.process_state_id})`);
-      if (updatedOrder.status !== newStatus) {
-        console.warn(`[ECOTRACK] WARNING: Status on Ecotrack ("${updatedOrder.status}") does not match requested status ("${newStatus}"). The Ecotrack public API does not support status changes via the update endpoint. The status will need to be changed manually on the Ecotrack dashboard.`);
-      }
-      return { 
-        success: data.success, 
-        message: data.message,
-        actualStatus: updatedOrder.status,
-        statusChanged: updatedOrder.status === newStatus
-      };
-    }
-    
+
     return data as { success: boolean; message?: string };
   } catch (error) {
-    console.error(`[ECOTRACK] Error updating order status for ${tracking}:`, error);
+    console.error(`[ECOTRACK] Error updating order ${tracking}:`, error);
     throw error;
   }
 }

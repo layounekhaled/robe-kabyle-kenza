@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { createEcotrackShipment, trackOrder, updateEcotrackOrderStatus, getEcotrackOrderByTracking } from "@/lib/ecotrack";
+import { createEcotrackShipment, trackOrder, validateEcotrackExpedition, getEcotrackOrderByTracking } from "@/lib/ecotrack";
 
 /**
  * GET /api/orders/[id] - Get order with items (admin)
@@ -125,122 +125,71 @@ export async function PUT(
         }
       }
 
-      // ── Push status change to Ecotrack when marking as shipped ──
-      // When local status changes to "shipped" (expédié), we attempt to update Ecotrack status.
-      // 
-      // IMPORTANT: The Ecotrack public API (v1.1.0) does NOT provide a way to change order status
-      // or "validate expedition" via the API. The update/order endpoint accepts a "status" parameter
-      // but it does NOT actually change the status on Ecotrack's side.
-      //
-      // What we do:
-      // 1. Call updateEcotrackOrderStatus (for documentation/audit purposes)
-      // 2. Fetch the ACTUAL status from Ecotrack using getEcotrackOrderByTracking
-      // 3. Store the real Ecotrack status locally in ecotrackStatus
-      //
-      // The "Valider l'expédition" step on Ecotrack must be done manually via their dashboard or app.
+      // ── Validate expedition on Ecotrack when marking as shipped ──
+      // When local status changes to "shipped" (expédié), we call the Ecotrack
+      // /api/v1/valid/order endpoint which is the API equivalent of clicking
+      // "Valider l'expédition" in the Ecotrack dashboard.
+      // This changes the order status from "prete_a_expedier" to "vers_station"/"vers_hub"
+      // and the order can no longer be modified or deleted on Ecotrack.
       if (status === "shipped" && existing.ecotrackTracking) {
         try {
           const ecotrackSettings = await db.ecotrackSettings.findFirst({
             where: { active: true },
           });
           if (ecotrackSettings) {
-            // Get wilaya code for the update request
-            let wilayaCode: number | null = null;
             try {
-              const { getWilayas } = await import("@/lib/ecotrack");
-              const wilayas = await getWilayas();
-              const matchedWilaya = wilayas.find(w => w.name === existing.wilaya);
-              if (matchedWilaya) wilayaCode = matchedWilaya.code;
-            } catch {
-              const parsed = parseInt(existing.wilaya);
-              if (!isNaN(parsed)) wilayaCode = parsed;
-            }
+              // Validate the expedition on Ecotrack ("Valider l'expédition")
+              await validateEcotrackExpedition(existing.ecotrackTracking);
 
-            if (wilayaCode) {
-              // Attempt to update status on Ecotrack (may not actually change it)
+              // Fetch the updated status from Ecotrack to store locally
+              const currentOrder = await getEcotrackOrderByTracking(existing.ecotrackTracking);
+              if (currentOrder) {
+                updateData.ecotrackStatus = currentOrder.status;
+                console.log(`[ECOTRACK] Order ${existing.ecotrackTracking} - expedition validated, new status: "${currentOrder.status}"`);
+              } else {
+                updateData.ecotrackStatus = "vers_station"; // Expected status after validation
+              }
+            } catch (validateError) {
+              // Validation failed - try to fetch current status
+              console.warn(`[ECOTRACK] Validate expedition failed for ${existing.ecotrackTracking}, fetching current status`);
               try {
-                const updateResult = await updateEcotrackOrderStatus(existing.ecotrackTracking, "vers_station", {
-                  type: 1,  // 1 = Livraison
-                  wilaya: wilayaCode,
-                  commune: existing.commune,
-                  adresse: existing.address,
-                  client: existing.customer.name,
-                  tel: existing.phone || existing.customer.phone,
-                  montant: existing.totalAmount + existing.shippingCost,
-                });
-                
-                // If the update returned the actual status, use it
-                if (updateResult && 'actualStatus' in updateResult && updateResult.actualStatus) {
-                  updateData.ecotrackStatus = updateResult.actualStatus;
-                  if (!updateResult.statusChanged) {
-                    console.warn(`[ECOTRACK] Status not changed on Ecotrack for ${existing.ecotrackTracking}. Actual: "${updateResult.actualStatus}". You may need to manually validate the expedition on the Ecotrack dashboard.`);
-                  }
-                } else {
-                  updateData.ecotrackStatus = "vers_station";
-                }
-              } catch (updateError) {
-                // Update failed - try to fetch current status directly
-                console.warn(`[ECOTRACK] Update call failed, fetching current status for ${existing.ecotrackTracking}`);
                 const currentOrder = await getEcotrackOrderByTracking(existing.ecotrackTracking);
                 if (currentOrder) {
                   updateData.ecotrackStatus = currentOrder.status;
                 } else {
-                  updateData.ecotrackStatus = "vers_station"; // Fallback to expected status
+                  updateData.ecotrackStatus = "vers_station";
                 }
+              } catch {
+                updateData.ecotrackStatus = "vers_station"; // Fallback
               }
             }
             console.log(`[ECOTRACK] Order ${existing.ecotrackTracking} - local status set to "shipped", ecotrackStatus set to "${updateData.ecotrackStatus}"`);
           }
         } catch (ecotrackUpdateError) {
-          console.error("[ECOTRACK] Failed to sync status for shipped order:", ecotrackUpdateError);
+          console.error("[ECOTRACK] Failed to validate expedition for shipped order:", ecotrackUpdateError);
           // Don't fail the whole update - local status is still saved
           updateData.ecotrackStatus = "vers_station"; // Set expected status as fallback
         }
       }
 
-      // ── Push status change to Ecotrack when marking as delivered ──
+      // ── Sync Ecotrack status when marking as delivered ──
+      // Delivery status on Ecotrack is managed by the courier's scanning process.
+      // We just sync the latest status from Ecotrack to our local record.
       if (status === "delivered" && existing.ecotrackTracking) {
         try {
           const ecotrackSettings = await db.ecotrackSettings.findFirst({
             where: { active: true },
           });
           if (ecotrackSettings) {
-            let wilayaCode: number | null = null;
             try {
-              const { getWilayas } = await import("@/lib/ecotrack");
-              const wilayas = await getWilayas();
-              const matchedWilaya = wilayas.find(w => w.name === existing.wilaya);
-              if (matchedWilaya) wilayaCode = matchedWilaya.code;
-            } catch {
-              const parsed = parseInt(existing.wilaya);
-              if (!isNaN(parsed)) wilayaCode = parsed;
-            }
-
-            if (wilayaCode) {
-              try {
-                const updateResult = await updateEcotrackOrderStatus(existing.ecotrackTracking, "livré", {
-                  type: 1,
-                  wilaya: wilayaCode,
-                  commune: existing.commune,
-                  adresse: existing.address,
-                  client: existing.customer.name,
-                  tel: existing.phone || existing.customer.phone,
-                  montant: existing.totalAmount + existing.shippingCost,
-                });
-                
-                if (updateResult && 'actualStatus' in updateResult && updateResult.actualStatus) {
-                  updateData.ecotrackStatus = updateResult.actualStatus;
-                } else {
-                  updateData.ecotrackStatus = "livré";
-                }
-              } catch (updateError) {
-                const currentOrder = await getEcotrackOrderByTracking(existing.ecotrackTracking);
-                if (currentOrder) {
-                  updateData.ecotrackStatus = currentOrder.status;
-                } else {
-                  updateData.ecotrackStatus = "livré";
-                }
+              const currentOrder = await getEcotrackOrderByTracking(existing.ecotrackTracking);
+              if (currentOrder) {
+                updateData.ecotrackStatus = currentOrder.status;
+              } else {
+                updateData.ecotrackStatus = "livré";
               }
+            } catch {
+              updateData.ecotrackStatus = "livré";
             }
             console.log(`[ECOTRACK] Order ${existing.ecotrackTracking} - local status set to "delivered", ecotrackStatus set to "${updateData.ecotrackStatus}"`);
           }
