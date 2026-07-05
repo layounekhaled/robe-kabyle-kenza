@@ -296,6 +296,7 @@ export async function POST(request: NextRequest) {
             montant: totalAmount + shipping,
             produit: productDesc,
             type: deliveryType === "stopdesk" ? "stopdesk" : "home",
+            order_type: 0,  // 0 = livraison (not échange)
             remarque: notes || `Commande ${orderNumber}`,
             reference: orderNumber,
             quantite: orderItems.reduce((sum, item) => sum + item.quantity, 0),

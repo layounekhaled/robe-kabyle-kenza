@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { createEcotrackShipment, trackOrder } from "@/lib/ecotrack";
+import { createEcotrackShipment, trackOrder, updateEcotrackOrderStatus } from "@/lib/ecotrack";
 
 /**
  * GET /api/orders/[id] - Get order with items (admin)
@@ -124,6 +124,40 @@ export async function PUT(
           }
         }
       }
+
+      // ── Push status change to Ecotrack when marking as shipped ──
+      // When local status changes to "shipped" (expédié), update Ecotrack status to "vers station"
+      if (status === "shipped" && existing.ecotrackTracking) {
+        try {
+          const ecotrackSettings = await db.ecotrackSettings.findFirst({
+            where: { active: true },
+          });
+          if (ecotrackSettings) {
+            await updateEcotrackOrderStatus(existing.ecotrackTracking, "vers station");
+            updateData.ecotrackStatus = "vers station";
+            console.log(`✅ Ecotrack status updated to "vers station" for tracking ${existing.ecotrackTracking}`);
+          }
+        } catch (ecotrackUpdateError) {
+          console.error("⚠️ Failed to update Ecotrack status to 'vers station':", ecotrackUpdateError);
+          // Don't fail the whole update - local status is still saved
+        }
+      }
+
+      // ── Push status change to Ecotrack when marking as delivered ──
+      if (status === "delivered" && existing.ecotrackTracking) {
+        try {
+          const ecotrackSettings = await db.ecotrackSettings.findFirst({
+            where: { active: true },
+          });
+          if (ecotrackSettings) {
+            await updateEcotrackOrderStatus(existing.ecotrackTracking, "livré");
+            updateData.ecotrackStatus = "livré";
+            console.log(`✅ Ecotrack status updated to "livré" for tracking ${existing.ecotrackTracking}`);
+          }
+        } catch (ecotrackUpdateError) {
+          console.error("⚠️ Failed to update Ecotrack status to 'livré':", ecotrackUpdateError);
+        }
+      }
     }
 
     // ── Handle manual "Send to Ecotrack" action ──
@@ -169,6 +203,7 @@ export async function PUT(
               montant: existing.totalAmount + existing.shippingCost,
               produit: productDesc,
               type: "home",
+              order_type: 0,  // 0 = livraison (not échange)
               remarque: existing.notes || `Commande ${existing.orderNumber}`,
               reference: existing.orderNumber,
               quantite: existing.items.reduce((sum, item) => sum + item.quantity, 0),

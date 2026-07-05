@@ -318,6 +318,7 @@ export async function createEcotrackShipment(orderData: {
   weight?: number;
   fragile?: boolean;
   reference?: string;
+  order_type?: number;  // 0 = livraison (default), 1 = échange, 2 = retour
 }) {
   try {
     // Build query parameters - the Ecotrack API uses query params, not JSON body
@@ -347,6 +348,10 @@ export async function createEcotrackShipment(orderData: {
       params.set("stop_desk", String(orderData.stop_desk));
     }
 
+    // Order type: 0 = livraison (default), 1 = échange, 2 = retour
+    // IMPORTANT: Must explicitly set to 0 to avoid the API defaulting to échange
+    params.set("order_type", String(orderData.order_type ?? 0));
+
     const response = await ecotrackFetch(`/api/v1/create/order?${params.toString()}`, {
       method: "POST",
     });
@@ -361,6 +366,42 @@ export async function createEcotrackShipment(orderData: {
     return data as { success: boolean; tracking: string; reference: string };
   } catch (error) {
     console.error("Error creating Ecotrack shipment:", error);
+    throw error;
+  }
+}
+
+/**
+ * Update order status on Ecotrack
+ * API endpoint: POST /api/v1/update/order/status
+ * 
+ * Available statuses on Ecotrack:
+ *  - "vers station" : Colis envoyé vers la station
+ *  - "en cours" : En cours de livraison
+ *  - "livré" : Livré
+ *  - "retourné" : Retourné
+ *  - "annulé" : Annulé
+ */
+export async function updateEcotrackOrderStatus(tracking: string, newStatus: string) {
+  try {
+    const params = new URLSearchParams();
+    params.set("tracking", tracking);
+    params.set("status", newStatus);
+
+    const response = await ecotrackFetch(`/api/v1/update/order/status?${params.toString()}`, {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(
+        `Ecotrack API error: ${response.status} ${response.statusText} - ${errorBody}`
+      );
+    }
+
+    const data = await response.json();
+    return data as { success: boolean; message?: string };
+  } catch (error) {
+    console.error(`Error updating Ecotrack order status for ${tracking}:`, error);
     throw error;
   }
 }
