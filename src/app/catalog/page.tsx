@@ -3,6 +3,9 @@ import Footer from "@/components/store/Footer";
 import CatalogClient from "@/components/store/CatalogClient";
 import { db } from "@/lib/db";
 
+// Force dynamic rendering so DB is queried at request time, not at build time
+export const dynamic = 'force-dynamic';
+
 export default async function CatalogPage() {
   // Fetch initial products data in the server component
   const [products, total] = await Promise.all([
