@@ -162,3 +162,48 @@ Stage Summary:
 - OpenGraph metadata now includes logo image for social sharing
 - metadataBase set for proper URL resolution
 - Both Ecotrack fixes confirmed working: order type=1 (Livraison) and expedition validation
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Integrate Supabase Storage for product image management
+
+Work Log:
+- Installed @supabase/supabase-js SDK
+- Created Supabase client configuration (src/lib/supabase.ts) with graceful fallback when env vars missing
+- Created Supabase Storage service (src/lib/supabase-storage.ts) with:
+  - uploadImage(): Upload with UUID-based paths (year/month/uuid.ext)
+  - deleteImage() / deleteMultipleImages(): Batch deletion from Storage
+  - getPublicUrl() / getThumbnailUrl() / getOptimizedUrl(): URL generation
+  - validateImageFile(): MIME type (JPG, PNG, WEBP, AVIF) + size (5 MB) validation
+  - extractPathFromUrl() / isSupabaseUrl(): URL parsing helpers
+- Updated /api/images route: POST for upload to Supabase, DELETE for Storage cleanup
+- Updated /api/products routes: Automatic Storage cleanup on product delete/update
+  - Detects removed images between old and new lists
+  - Non-blocking deletion (doesn't fail product update if Storage delete fails)
+- Created ImageUploader component (src/components/admin/ImageUploader.tsx):
+  - Drag-and-drop file upload zone with visual feedback
+  - Upload progress indicator per image
+  - Image reordering via HTML5 drag-and-drop
+  - Set main image (star icon, moves to first position)
+  - Delete with automatic Supabase Storage cleanup
+  - Error handling with retry button
+  - Max 10 images per product
+- Created OptimizedImage component (src/components/ui/optimized-image.tsx):
+  - Automatic Supabase thumbnail/optimization URL generation
+  - Lazy loading with loading skeleton
+  - Fallback placeholder when image fails
+- Updated admin products page to use ImageUploader (replaced URL-only input)
+- Updated ProductCard and ImageCarousel to use OptimizedImage with thumbnails and fallback
+- Added Supabase domains to next.config.ts image patterns
+- Created supabase-setup.sql with bucket creation and RLS policies
+- Build successful, pushed to GitHub
+
+Stage Summary:
+- Full Supabase Storage integration for product images
+- Admin can upload images directly via drag-and-drop
+- Images stored in Supabase "products" bucket with unique paths
+- Automatic cleanup when images are removed or products deleted
+- OptimizedImage component provides lazy loading, thumbnails, and fallback
+- RLS policies protect uploads/deletes (authenticated only) while allowing public reads
+- TODO: User must configure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY env vars
