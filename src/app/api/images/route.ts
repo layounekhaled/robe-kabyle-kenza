@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { uploadImage, validateImageFile, deleteImage, isSupabaseUrl } from "@/lib/supabase-storage";
-import { isSupabaseConfigured } from "@/lib/supabase";
+import { uploadImage, validateImageFile, deleteImage, isSupabaseUrl, UploadResult } from "@/lib/supabase-storage";
+import { isSupabaseConfigured, isSupabaseAdminConfigured } from "@/lib/supabase";
+
+interface ImageUploadResult extends UploadResult {
+  name?: string;
+  size?: number;
+  type?: string;
+}
 
 /**
  * POST /api/images - Upload image(s) to Supabase Storage
@@ -21,7 +27,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    // Check if Supabase is configured
+    // Check if Supabase is configured (admin key required for writes)
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json(
+        { error: "Supabase admin n'est pas configuré. Vérifiez SUPABASE_SERVICE_ROLE_KEY." },
+        { status: 503 }
+      );
+    }
     if (!isSupabaseConfigured()) {
       return NextResponse.json(
         { error: "Supabase n'est pas configuré. Vérifiez les variables d'environnement NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY." },
@@ -55,7 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload each file
-    const results = [];
+    const results: ImageUploadResult[] = [];
     for (const file of files) {
       // Validate
       const validation = validateImageFile(file);

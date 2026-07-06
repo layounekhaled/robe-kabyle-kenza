@@ -9,7 +9,7 @@
  * Max file size: 5 MB
  */
 
-import { supabase, SUPABASE_BUCKET, isSupabaseConfigured } from "./supabase";
+import { supabase, supabaseAdmin, SUPABASE_BUCKET, isSupabaseConfigured, isSupabaseAdminConfigured } from "./supabase";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -113,7 +113,15 @@ export async function uploadImage(
   file: File,
   onProgress?: (progress: number) => void
 ): Promise<UploadResult> {
-  // Check configuration
+  // Check configuration (server-side needs admin key for writes)
+  if (!isSupabaseAdminConfigured()) {
+    return {
+      success: false,
+      url: null,
+      path: null,
+      error: "Supabase admin n'est pas configuré. Vérifiez SUPABASE_SERVICE_ROLE_KEY.",
+    };
+  }
   if (!isSupabaseConfigured()) {
     return {
       success: false,
@@ -141,8 +149,8 @@ export async function uploadImage(
   onProgress?.(10);
 
   try {
-    // Upload to Supabase Storage
-    const { data, error } = await supabase.storage
+    // Upload to Supabase Storage using admin client (bypasses RLS)
+    const { data, error } = await supabaseAdmin.storage
       .from(SUPABASE_BUCKET)
       .upload(filePath, file, {
         cacheControl: "3600",
@@ -262,10 +270,10 @@ export function isSupabaseUrl(url: string): boolean {
  * @returns DeleteResult indicating success or failure
  */
 export async function deleteImage(url: string): Promise<DeleteResult> {
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseAdminConfigured()) {
     return {
       success: false,
-      error: "Supabase n'est pas configuré.",
+      error: "Supabase admin n'est pas configuré.",
     };
   }
 
@@ -276,7 +284,8 @@ export async function deleteImage(url: string): Promise<DeleteResult> {
   }
 
   try {
-    const { error } = await supabase.storage
+    // Use admin client for deletion (bypasses RLS)
+    const { error } = await supabaseAdmin.storage
       .from(SUPABASE_BUCKET)
       .remove([path]);
 
@@ -316,9 +325,10 @@ export async function deleteMultipleImages(urls: string[]): Promise<DeleteResult
   }
 
   // Batch delete all Supabase paths at once
-  if (pathsToDelete.length > 0 && isSupabaseConfigured()) {
+  if (pathsToDelete.length > 0 && isSupabaseAdminConfigured()) {
     try {
-      const { error } = await supabase.storage
+      // Use admin client for batch deletion (bypasses RLS)
+      const { error } = await supabaseAdmin.storage
         .from(SUPABASE_BUCKET)
         .remove(pathsToDelete);
 
