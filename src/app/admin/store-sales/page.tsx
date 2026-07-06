@@ -8,7 +8,9 @@ import {
   Store,
   Package,
   Loader2,
+  Plus,
 } from 'lucide-react';
+import { NewSaleDialog } from '@/components/admin/NewSaleDialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -75,6 +77,9 @@ export default function StoreSalesPage() {
   const [selectedSale, setSelectedSale] = useState<StoreSale | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
+  // New sale dialog
+  const [showNewSale, setShowNewSale] = useState(false);
+
   const fetchSales = useCallback(async (page = 1) => {
     try {
       setLoading(true);
@@ -127,6 +132,10 @@ export default function StoreSalesPage() {
           <p className="text-muted-foreground">{pagination.total} ventes au comptoir</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button onClick={() => setShowNewSale(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nouvelle Vente
+          </Button>
           <Select value={paymentFilter} onValueChange={setPaymentFilter}>
             <SelectTrigger className="w-40">
               <SelectValue placeholder="Paiement" />
@@ -318,6 +327,13 @@ export default function StoreSalesPage() {
           ) : null}
         </DialogContent>
       </Dialog>
+
+      {/* New Sale Dialog */}
+      <NewSaleDialog
+        open={showNewSale}
+        onOpenChange={setShowNewSale}
+        onSuccess={() => fetchSales(1)}
+      />
     </div>
   );
 }

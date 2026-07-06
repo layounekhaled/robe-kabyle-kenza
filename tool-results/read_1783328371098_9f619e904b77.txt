@@ -1,0 +1,1078 @@
+     1→"use client";
+     2→
+     3→import { useState, useEffect, useCallback, useRef } from "react";
+     4→import { Button } from "@/components/ui/button";
+     5→import { Input } from "@/components/ui/input";
+     6→import { Card, CardContent } from "@/components/ui/card";
+     7→import { Badge } from "@/components/ui/badge";
+     8→import { Separator } from "@/components/ui/separator";
+     9→import { ScrollArea } from "@/components/ui/scroll-area";
+    10→import {
+    11→  Dialog,
+    12→  DialogContent,
+    13→  DialogHeader,
+    14→  DialogTitle,
+    15→} from "@/components/ui/dialog";
+    16→import { toast } from "sonner";
+    17→import {
+    18→  Search,
+    19→  Plus,
+    20→  Minus,
+    21→  ShoppingCart,
+    22→  Trash2,
+    23→  CreditCard,
+    24→  Banknote,
+    25→  Printer,
+    26→  RefreshCw,
+    27→  X,
+    28→  Package,
+    29→  Loader2,
+    30→  Tag,
+    31→  Check,
+    32→} from "lucide-react";
+    33→
+    34→// ─── Types ───────────────────────────────────────────────────────────────────
+    35→
+    36→interface ProductImage {
+    37→  id: string;
+    38→  url: string;
+    39→  alt: string | null;
+    40→  sortOrder: number;
+    41→}
+    42→
+    43→interface ProductVariant {
+    44→  id: string;
+    45→  productId: string;
+    46→  size: string;
+    47→  color: string;
+    48→  stock: number;
+    49→}
+    50→
+    51→interface Product {
+    52→  id: string;
+    53→  reference: string;
+    54→  name: string;
+    55→  description: string | null;
+    56→  price: number;
+    57→  fabric: string | null;
+    58→  featured: boolean;
+    59→  active: boolean;
+    60→  images: ProductImage[];
+    61→  variants: ProductVariant[];
+    62→}
+    63→
+    64→interface CartItem {
+    65→  productId: string;
+    66→  name: string;
+    67→  reference: string;
+    68→  size: string;
+    69→  color: string;
+    70→  quantity: number;
+    71→  unitPrice: number;
+    72→  image: string | null;
+    73→  variantId: string;
+    74→}
+    75→
+    76→interface SaleItem {
+    77→  id: string;
+    78→  productId: string;
+    79→  size: string;
+    80→  color: string;
+    81→  quantity: number;
+    82→  unitPrice: number;
+    83→  product: {
+    84→    id: string;
+    85→    name: string;
+    86→    reference: string;
+    87→    images: ProductImage[];
+    88→  };
+    89→}
+    90→
+    91→interface Sale {
+    92→  id: string;
+    93→  saleNumber: string;
+    94→  totalAmount: number;
+    95→  paymentMethod: string;
+    96→  soldBy: string;
+    97→  createdAt: string;
+    98→  items: SaleItem[];
+    99→}
+   100→
+   101→// ─── Helpers ─────────────────────────────────────────────────────────────────
+   102→
+   103→function formatPrice(amount: number): string {
+   104→  return new Intl.NumberFormat("fr-DZ").format(amount) + " DA";
+   105→}
+   106→
+   107→function formatDate(iso: string): string {
+   108→  return new Date(iso).toLocaleDateString("fr-FR", {
+   109→    day: "2-digit",
+   110→    month: "2-digit",
+   111→    year: "numeric",
+   112→    hour: "2-digit",
+   113→    minute: "2-digit",
+   114→  });
+   115→}
+   116→
+   117→const COLOR_MAP: Record<string, string> = {
+   118→  Rouge: "bg-red-500",
+   119→  Bleu: "bg-blue-500",
+   120→  Noir: "bg-gray-800",
+   121→  Vert: "bg-green-500",
+   122→  Blanc: "bg-white border border-gray-300",
+   123→  Or: "bg-yellow-400",
+   124→};
+   125→
+   126→// ─── Component ───────────────────────────────────────────────────────────────
+   127→
+   128→export default function POSPage() {
+   129→  // Product search
+   130→  const [searchQuery, setSearchQuery] = useState("");
+   131→  const [products, setProducts] = useState<Product[]>([]);
+   132→  const [searchLoading, setSearchLoading] = useState(false);
+   133→  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+   134→
+   135→  // Product selection
+   136→  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+   137→  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+   138→  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+   139→  const [quantity, setQuantity] = useState(1);
+   140→
+   141→  // Cart
+   142→  const [cart, setCart] = useState<CartItem[]>([]);
+   143→  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card">("cash");
+   144→  const [discount, setDiscount] = useState(0);
+   145→
+   146→  // Checkout
+   147→  const [checkoutLoading, setCheckoutLoading] = useState(false);
+   148→  const [showReceipt, setShowReceipt] = useState(false);
+   149→  const [lastSale, setLastSale] = useState<Sale | null>(null);
+   150→
+   151→  const searchInputRef = useRef<HTMLInputElement>(null);
+   152→
+   153→  // ─── Product Search ──────────────────────────────────────────────────────
+   154→
+   155→  const searchProducts = useCallback(async (query: string) => {
+   156→    if (!query.trim()) {
+   157→      // Load all products when search is empty
+   158→      try {
+   159→        const res = await fetch("/api/products?limit=50");
+   160→        if (res.ok) {
+   161→          const data = await res.json();
+   162→          setProducts(data.products || []);
+   163→        }
+   164→      } catch {
+   165→        // silently fail
+   166→      }
+   167→      return;
+   168→    }
+   169→
+   170→    setSearchLoading(true);
+   171→    try {
+   172→      const res = await fetch(
+   173→        `/api/products?search=${encodeURIComponent(query)}&limit=50`
+   174→      );
+   175→      if (res.ok) {
+   176→        const data = await res.json();
+   177→        setProducts(data.products || []);
+   178→      }
+   179→    } catch {
+   180→      toast.error("Erreur lors de la recherche");
+   181→    } finally {
+   182→      setSearchLoading(false);
+   183→    }
+   184→  }, []);
+   185→
+   186→  // Debounced search
+   187→  useEffect(() => {
+   188→    if (searchTimeout.current) {
+   189→      clearTimeout(searchTimeout.current);
+   190→    }
+   191→    searchTimeout.current = setTimeout(() => {
+   192→      searchProducts(searchQuery);
+   193→    }, 300);
+   194→    return () => {
+   195→      if (searchTimeout.current) {
+   196→        clearTimeout(searchTimeout.current);
+   197→      }
+   198→    };
+   199→  }, [searchQuery, searchProducts]);
+   200→
+   201→  // Initial load
+   202→  useEffect(() => {
+   203→    searchProducts("");
+   204→  }, [searchProducts]);
+   205→
+   206→  // ─── Keyboard Shortcuts ──────────────────────────────────────────────────
+   207→
+   208→  useEffect(() => {
+   209→    const handleKeyDown = (e: KeyboardEvent) => {
+   210→      if (e.key === "F2") {
+   211→        e.preventDefault();
+   212→        searchInputRef.current?.focus();
+   213→        searchInputRef.current?.select();
+   214→      }
+   215→      if (e.key === "F4") {
+   216→        e.preventDefault();
+   217→        handleCheckout();
+   218→      }
+   219→      if (e.key === "Escape") {
+   220→        e.preventDefault();
+   221→        if (showReceipt) {
+   222→          handleNewSale();
+   223→        } else {
+   224→          handleClearCart();
+   225→        }
+   226→      }
+   227→    };
+   228→    window.addEventListener("keydown", handleKeyDown);
+   229→    return () => window.removeEventListener("keydown", handleKeyDown);
+   230→  }, [cart, showReceipt, paymentMethod, discount]);
+   231→
+   232→  // ─── Product Selection ──────────────────────────────────────────────────
+   233→
+   234→  const handleSelectProduct = (product: Product) => {
+   235→    setSelectedProduct(product);
+   236→    setSelectedSize(null);
+   237→    setSelectedColor(null);
+   238→    setQuantity(1);
+   239→  };
+   240→
+   241→  const availableSizes = selectedProduct
+   242→    ? [...new Set(selectedProduct.variants.map((v) => v.size))]
+   243→    : [];
+   244→
+   245→  const availableColors = selectedProduct && selectedSize
+   246→    ? [
+   247→        ...new Set(
+   248→          selectedProduct.variants
+   249→            .filter((v) => v.size === selectedSize)
+   250→            .map((v) => v.color)
+   251→        ),
+   252→      ]
+   253→    : selectedProduct
+   254→    ? [...new Set(selectedProduct.variants.map((v) => v.color))]
+   255→    : [];
+   256→
+   257→  const selectedVariant = selectedProduct?.variants.find(
+   258→    (v) => v.size === selectedSize && v.color === selectedColor
+   259→  );
+   260→
+   261→  const variantStock = selectedVariant?.stock ?? 0;
+   262→
+   263→  // ─── Cart Management ────────────────────────────────────────────────────
+   264→
+   265→  const handleAddToCart = () => {
+   266→    if (!selectedProduct || !selectedSize || !selectedColor) {
+   267→      toast.error("Sélectionnez une taille et une couleur");
+   268→      return;
+   269→    }
+   270→    if (variantStock < quantity) {
+   271→      toast.error("Stock insuffisant");
+   272→      return;
+   273→    }
+   274→    if (quantity <= 0) {
+   275→      toast.error("Quantité invalide");
+   276→      return;
+   277→    }
+   278→
+   279→    const existingIndex = cart.findIndex(
+   280→      (item) =>
+   281→        item.productId === selectedProduct.id &&
+   282→        item.size === selectedSize &&
+   283→        item.color === selectedColor
+   284→    );
+   285→
+   286→    const newQuantity =
+   287→      existingIndex >= 0 ? cart[existingIndex].quantity + quantity : quantity;
+   288→
+   289→    // Check total quantity against stock
+   290→    if (newQuantity > variantStock) {
+   291→      toast.error(
+   292→        `Stock insuffisant. Disponible: ${variantStock} - Dans le panier: ${existingIndex >= 0 ? cart[existingIndex].quantity : 0}`
+   293→      );
+   294→      return;
+   295→    }
+   296→
+   297→    const cartItem: CartItem = {
+   298→      productId: selectedProduct.id,
+   299→      name: selectedProduct.name,
+   300→      reference: selectedProduct.reference,
+   301→      size: selectedSize,
+   302→      color: selectedColor,
+   303→      quantity: newQuantity,
+   304→      unitPrice: selectedProduct.price,
+   305→      image: selectedProduct.images[0]?.url || null,
+   306→      variantId: selectedVariant!.id,
+   307→    };
+   308→
+   309→    if (existingIndex >= 0) {
+   310→      const newCart = [...cart];
+   311→      newCart[existingIndex] = cartItem;
+   312→      setCart(newCart);
+   313→    } else {
+   314→      setCart([...cart, cartItem]);
+   315→    }
+   316→
+   317→    toast.success(`${selectedProduct.name} ajouté au panier`);
+   318→    // Reset selection but keep product selected for quick re-add
+   319→    setSelectedSize(null);
+   320→    setSelectedColor(null);
+   321→    setQuantity(1);
+   322→  };
+   323→
+   324→  const handleUpdateCartItemQuantity = (index: number, newQty: number) => {
+   325→    if (newQty <= 0) {
+   326→      handleRemoveCartItem(index);
+   327→      return;
+   328→    }
+   329→    const newCart = [...cart];
+   330→    newCart[index] = { ...newCart[index], quantity: newQty };
+   331→    setCart(newCart);
+   332→  };
+   333→
+   334→  const handleRemoveCartItem = (index: number) => {
+   335→    setCart(cart.filter((_, i) => i !== index));
+   336→  };
+   337→
+   338→  const handleClearCart = () => {
+   339→    if (cart.length === 0) return;
+   340→    setCart([]);
+   341→    setDiscount(0);
+   342→    toast.info("Panier vidé");
+   343→  };
+   344→
+   345→  // ─── Calculations ───────────────────────────────────────────────────────
+   346→
+   347→  const subtotal = cart.reduce(
+   348→    (sum, item) => sum + item.unitPrice * item.quantity,
+   349→    0
+   350→  );
+   351→  const total = Math.max(0, subtotal - discount);
+   352→  const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+   353→
+   354→  // ─── Checkout ───────────────────────────────────────────────────────────
+   355→
+   356→  const handleCheckout = async () => {
+   357→    if (cart.length === 0) {
+   358→      toast.error("Le panier est vide");
+   359→      return;
+   360→    }
+   361→
+   362→    setCheckoutLoading(true);
+   363→    try {
+   364→      const res = await fetch("/api/store-sales", {
+   365→        method: "POST",
+   366→        headers: { "Content-Type": "application/json" },
+   367→        body: JSON.stringify({
+   368→          items: cart.map((item) => ({
+   369→            productId: item.productId,
+   370→            size: item.size,
+   371→            color: item.color,
+   372→            quantity: item.quantity,
+   373→          })),
+   374→          paymentMethod,
+   375→          notes: discount > 0 ? `Remise: ${formatPrice(discount)}` : undefined,
+   376→        }),
+   377→      });
+   378→
+   379→      const data = await res.json();
+   380→
+   381→      if (!res.ok) {
+   382→        toast.error(data.error || "Erreur lors de l'encaissement");
+   383→        return;
+   384→      }
+   385→
+   386→      setLastSale(data.sale);
+   387→      setShowReceipt(true);
+   388→      toast.success("Vente enregistrée avec succès !");
+   389→
+   390→      // Refresh products to update stock
+   391→      searchProducts(searchQuery);
+   392→    } catch {
+   393→      toast.error("Erreur de connexion au serveur");
+   394→    } finally {
+   395→      setCheckoutLoading(false);
+   396→    }
+   397→  };
+   398→
+   399→  const handleNewSale = () => {
+   400→    setShowReceipt(false);
+   401→    setLastSale(null);
+   402→    setCart([]);
+   403→    setDiscount(0);
+   404→    setSelectedProduct(null);
+   405→    setSelectedSize(null);
+   406→    setSelectedColor(null);
+   407→    setQuantity(1);
+   408→    searchInputRef.current?.focus();
+   409→  };
+   410→
+   411→  const handlePrintReceipt = () => {
+   412→    window.print();
+   413→  };
+   414→
+   415→  // ─── Render ─────────────────────────────────────────────────────────────
+   416→
+   417→  return (
+   418→    <div className="h-[calc(100vh-3.5rem)] flex flex-col lg:flex-row gap-0 overflow-hidden">
+   419→      {/* ─── LEFT PANEL: Product Search & Selection (60%) ─── */}
+   420→      <div className="flex-1 lg:w-[60%] flex flex-col border-r overflow-hidden">
+   421→        {/* Search Bar */}
+   422→        <div className="p-3 border-b bg-muted/30">
+   423→          <div className="relative">
+   424→            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+   425→            <Input
+   426→              ref={searchInputRef}
+   427→              type="text"
+   428→              placeholder="Rechercher par nom, référence... (F2)"
+   429→              value={searchQuery}
+   430→              onChange={(e) => setSearchQuery(e.target.value)}
+   431→              className="pl-10 h-12 text-base"
+   432→            />
+   433→            {searchQuery && (
+   434→              <Button
+   435→                variant="ghost"
+   436→                size="sm"
+   437→                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+   438→                onClick={() => {
+   439→                  setSearchQuery("");
+   440→                  searchInputRef.current?.focus();
+   441→                }}
+   442→              >
+   443→                <X className="w-4 h-4" />
+   444→              </Button>
+   445→            )}
+   446→          </div>
+   447→        </div>
+   448→
+   449→        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+   450→          {/* Product Grid */}
+   451→          <div
+   452→            className={`flex-1 overflow-hidden transition-all ${
+   453→              selectedProduct ? "lg:w-1/2" : "w-full"
+   454→            }`}
+   455→          >
+   456→            <ScrollArea className="h-full">
+   457→              <div className="p-3">
+   458→                {searchLoading && (
+   459→                  <div className="flex items-center justify-center py-8">
+   460→                    <Loader2 className="w-6 h-6 animate-spin text-kabyle-terracotta" />
+   461→                  </div>
+   462→                )}
+   463→
+   464→                {!searchLoading && products.length === 0 && (
+   465→                  <div className="text-center py-12 text-muted-foreground">
+   466→                    <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
+   467→                    <p className="text-lg">Aucun produit trouvé</p>
+   468→                    <p className="text-sm mt-1">
+   469→                      Essayez un autre terme de recherche
+   470→                    </p>
+   471→                  </div>
+   472→                )}
+   473→
+   474→                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+   475→                  {products.map((product) => {
+   476→                    const totalStock = product.variants.reduce(
+   477→                      (sum, v) => sum + v.stock,
+   478→                      0
+   479→                    );
+   480→                    const isSelected =
+   481→                      selectedProduct?.id === product.id;
+   482→
+   483→                    return (
+   484→                      <Card
+   485→                        key={product.id}
+   486→                        className={`cursor-pointer transition-all hover:shadow-md ${
+   487→                          isSelected
+   488→                            ? "ring-2 ring-kabyle-terracotta shadow-md"
+   489→                            : "hover:ring-1 hover:ring-kabyle-terracotta/30"
+   490→                        }`}
+   491→                        onClick={() => handleSelectProduct(product)}
+   492→                      >
+   493→                        <CardContent className="p-3">
+   494→                          <div className="aspect-[3/4] rounded-md overflow-hidden bg-muted mb-2 relative">
+   495→                            {product.images[0] ? (
+   496→                              <img
+   497→                                src={product.images[0].url}
+   498→                                alt={product.name}
+   499→                                className="w-full h-full object-cover"
+   500→                              />
+   501→                            ) : (
+   502→                              <div className="w-full h-full flex items-center justify-center">
+   503→                                <Package className="w-8 h-8 text-muted-foreground" />
+   504→                              </div>
+   505→                            )}
+   506→                            {totalStock === 0 && (
+   507→                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+   508→                                <Badge variant="destructive" className="text-xs">
+   509→                                  Rupture
+   510→                                </Badge>
+   511→                              </div>
+   512→                            )}
+   513→                            {isSelected && (
+   514→                              <div className="absolute top-1 right-1 w-6 h-6 rounded-full bg-kabyle-terracotta text-kabyle-cream flex items-center justify-center">
+   515→                                <Check className="w-4 h-4" />
+   516→                              </div>
+   517→                            )}
+   518→                          </div>
+   519→                          <p className="font-semibold text-sm truncate">
+   520→                            {product.name}
+   521→                          </p>
+   522→                          <p className="text-xs text-muted-foreground">
+   523→                            {product.reference}
+   524→                          </p>
+   525→                          <div className="flex items-center justify-between mt-1">
+   526→                            <p className="font-bold text-sm text-kabyle-terracotta">
+   527→                              {formatPrice(product.price)}
+   528→                            </p>
+   529→                            <Badge
+   530→                              variant={totalStock > 0 ? "secondary" : "destructive"}
+   531→                              className="text-[10px] px-1.5 py-0"
+   532→                            >
+   533→                              {totalStock > 0
+   534→                                ? `Stock: ${totalStock}`
+   535→                                : "Rupture"}
+   536→                            </Badge>
+   537→                          </div>
+   538→                        </CardContent>
+   539→                      </Card>
+   540→                    );
+   541→                  })}
+   542→                </div>
+   543→              </div>
+   544→            </ScrollArea>
+   545→          </div>
+   546→
+   547→          {/* Variant Selector Panel */}
+   548→          {selectedProduct && (
+   549→            <div className="lg:w-1/2 border-t lg:border-t-0 lg:border-l overflow-y-auto bg-muted/20">
+   550→              <div className="p-4">
+   551→                {/* Product Info */}
+   552→                <div className="flex items-start gap-3 mb-4">
+   553→                  <div className="w-16 h-20 rounded-md overflow-hidden bg-muted shrink-0">
+   554→                    {selectedProduct.images[0] ? (
+   555→                      <img
+   556→                        src={selectedProduct.images[0].url}
+   557→                        alt={selectedProduct.name}
+   558→                        className="w-full h-full object-cover"
+   559→                      />
+   560→                    ) : (
+   561→                      <div className="w-full h-full flex items-center justify-center">
+   562→                        <Package className="w-5 h-5 text-muted-foreground" />
+   563→                      </div>
+   564→                    )}
+   565→                  </div>
+   566→                  <div className="min-w-0">
+   567→                    <h3 className="font-bold text-base">
+   568→                      {selectedProduct.name}
+   569→                    </h3>
+   570→                    <p className="text-sm text-muted-foreground">
+   571→                      Réf: {selectedProduct.reference}
+   572→                    </p>
+   573→                    <p className="font-bold text-lg text-kabyle-terracotta mt-1">
+   574→                      {formatPrice(selectedProduct.price)}
+   575→                    </p>
+   576→                    {selectedProduct.fabric && (
+   577→                      <p className="text-xs text-muted-foreground mt-0.5">
+   578→                        Tissu: {selectedProduct.fabric}
+   579→                      </p>
+   580→                    )}
+   581→                  </div>
+   582→                </div>
+   583→
+   584→                <Separator className="my-4" />
+   585→
+   586→                {/* Size Selector */}
+   587→                <div className="mb-4">
+   588→                  <p className="text-sm font-semibold mb-2">Taille</p>
+   589→                  <div className="flex flex-wrap gap-2">
+   590→                    {availableSizes.map((size) => (
+   591→                      <Button
+   592→                        key={size}
+   593→                        variant={selectedSize === size ? "default" : "outline"}
+   594→                        className={`h-11 min-w-[3rem] text-base ${
+   595→                          selectedSize === size
+   596→                            ? "bg-kabyle-terracotta text-kabyle-cream hover:bg-kabyle-terracotta/90"
+   597→                            : ""
+   598→                        }`}
+   599→                        onClick={() => {
+   600→                          setSelectedSize(size);
+   601→                          setSelectedColor(null);
+   602→                        }}
+   603→                      >
+   604→                        {size}
+   605→                      </Button>
+   606→                    ))}
+   607→                  </div>
+   608→                </div>
+   609→
+   610→                {/* Color Selector */}
+   611→                <div className="mb-4">
+   612→                  <p className="text-sm font-semibold mb-2">Couleur</p>
+   613→                  <div className="flex flex-wrap gap-2">
+   614→                    {availableColors.map((color) => {
+   615→                      const hasStock =
+   616→                        selectedProduct.variants.some(
+   617→                          (v) =>
+   618→                            v.color === color &&
+   619→                            (!selectedSize || v.size === selectedSize) &&
+   620→                            v.stock > 0
+   621→                        );
+   622→                      return (
+   623→                        <Button
+   624→                          key={color}
+   625→                          variant={
+   626→                            selectedColor === color ? "default" : "outline"
+   627→                          }
+   628→                          className={`h-11 text-base gap-2 ${
+   629→                            selectedColor === color
+   630→                              ? "bg-kabyle-terracotta text-kabyle-cream hover:bg-kabyle-terracotta/90"
+   631→                              : ""
+   632→                          } ${!hasStock ? "opacity-50" : ""}`}
+   633→                          disabled={!hasStock}
+   634→                          onClick={() => setSelectedColor(color)}
+   635→                        >
+   636→                          <span
+   637→                            className={`w-4 h-4 rounded-full inline-block ${COLOR_MAP[color] || "bg-gray-400"}`}
+   638→                          />
+   639→                          {color}
+   640→                          {!hasStock && (
+   641→                            <Badge
+   642→                              variant="destructive"
+   643→                              className="text-[9px] px-1 py-0 ml-1"
+   644→                            >
+   645→                              Rupture
+   646→                            </Badge>
+   647→                          )}
+   648→                        </Button>
+   649→                      );
+   650→                    })}
+   651→                  </div>
+   652→                </div>
+   653→
+   654→                {/* Stock Info */}
+   655→                {selectedSize && selectedColor && (
+   656→                  <div className="mb-4 p-3 rounded-lg bg-muted">
+   657→                    <div className="flex items-center justify-between">
+   658→                      <span className="text-sm">Stock disponible</span>
+   659→                      <Badge
+   660→                        variant={variantStock > 0 ? "secondary" : "destructive"}
+   661→                        className="text-sm"
+   662→                      >
+   663→                        {variantStock > 0
+   664→                          ? `${variantStock} en stock`
+   665→                          : "Rupture de stock"}
+   666→                      </Badge>
+   667→                    </div>
+   668→                  </div>
+   669→                )}
+   670→
+   671→                {/* Quantity Selector */}
+   672→                <div className="mb-4">
+   673→                  <p className="text-sm font-semibold mb-2">Quantité</p>
+   674→                  <div className="flex items-center gap-2">
+   675→                    <Button
+   676→                      variant="outline"
+   677→                      size="lg"
+   678→                      className="h-11 w-11 p-0"
+   679→                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+   680→                      disabled={quantity <= 1}
+   681→                    >
+   682→                      <Minus className="w-5 h-5" />
+   683→                    </Button>
+   684→                    <Input
+   685→                      type="number"
+   686→                      min={1}
+   687→                      max={variantStock || 99}
+   688→                      value={quantity}
+   689→                      onChange={(e) => {
+   690→                        const val = parseInt(e.target.value) || 1;
+   691→                        setQuantity(Math.max(1, Math.min(val, variantStock || 99)));
+   692→                      }}
+   693→                      className="h-11 w-20 text-center text-base font-bold"
+   694→                    />
+   695→                    <Button
+   696→                      variant="outline"
+   697→                      size="lg"
+   698→                      className="h-11 w-11 p-0"
+   699→                      onClick={() =>
+   700→                        setQuantity(Math.min(quantity + 1, variantStock || 99))
+   701→                      }
+   702→                      disabled={quantity >= (variantStock || 99)}
+   703→                    >
+   704→                      <Plus className="w-5 h-5" />
+   705→                    </Button>
+   706→                  </div>
+   707→                  {/* Quick quantity buttons */}
+   708→                  <div className="flex gap-2 mt-2">
+   709→                    {[1, 2, 3, 5].map((qty) => (
+   710→                      <Button
+   711→                        key={qty}
+   712→                        variant={quantity === qty ? "default" : "outline"}
+   713→                        size="sm"
+   714→                        className={`h-9 min-w-[2.5rem] ${
+   715→                          quantity === qty
+   716→                            ? "bg-kabyle-terracotta text-kabyle-cream"
+   717→                            : ""
+   718→                        }`}
+   719→                        onClick={() => setQuantity(qty)}
+   720→                        disabled={variantStock > 0 && qty > variantStock}
+   721→                      >
+   722→                        {qty}
+   723→                      </Button>
+   724→                    ))}
+   725→                  </div>
+   726→                </div>
+   727→
+   728→                {/* Add to Cart Button */}
+   729→                <Button
+   730→                  className="w-full h-14 text-lg font-bold bg-kabyle-terracotta hover:bg-kabyle-terracotta/90 text-kabyle-cream"
+   731→                  onClick={handleAddToCart}
+   732→                  disabled={
+   733→                    !selectedSize ||
+   734→                    !selectedColor ||
+   735→                    variantStock === 0 ||
+   736→                    quantity <= 0
+   737→                  }
+   738→                >
+   739→                  <ShoppingCart className="w-5 h-5 mr-2" />
+   740→                  Ajouter au panier
+   741→                  {selectedSize && selectedColor && quantity > 0 && (
+   742→                    <span className="ml-2 opacity-80">
+   743→                      — {formatPrice(selectedProduct.price * quantity)}
+   744→                    </span>
+   745→                  )}
+   746→                </Button>
+   747→              </div>
+   748→            </div>
+   749→          )}
+   750→        </div>
+   751→      </div>
+   752→
+   753→      {/* ─── RIGHT PANEL: Cart & Checkout (40%) ─── */}
+   754→      <div className="lg:w-[40%] flex flex-col overflow-hidden bg-card">
+   755→        {/* Cart Header */}
+   756→        <div className="p-4 border-b flex items-center justify-between">
+   757→          <div className="flex items-center gap-2">
+   758→            <ShoppingCart className="w-5 h-5 text-kabyle-terracotta" />
+   759→            <h2 className="font-bold text-lg">Panier</h2>
+   760→            {itemCount > 0 && (
+   761→              <Badge className="bg-kabyle-terracotta text-kabyle-cream">
+   762→                {itemCount}
+   763→              </Badge>
+   764→            )}
+   765→          </div>
+   766→          {cart.length > 0 && (
+   767→            <Button
+   768→              variant="ghost"
+   769→              size="sm"
+   770→              className="text-destructive hover:text-destructive h-8"
+   771→              onClick={handleClearCart}
+   772→            >
+   773→              <Trash2 className="w-4 h-4 mr-1" />
+   774→              Vider
+   775→            </Button>
+   776→          )}
+   777→        </div>
+   778→
+   779→        {/* Cart Items */}
+   780→        <ScrollArea className="flex-1">
+   781→          {cart.length === 0 ? (
+   782→            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+   783→              <ShoppingCart className="w-12 h-12 mb-3 opacity-30" />
+   784→              <p className="text-lg">Panier vide</p>
+   785→              <p className="text-sm mt-1">
+   786→                Sélectionnez un produit pour commencer
+   787→              </p>
+   788→            </div>
+   789→          ) : (
+   790→            <div className="p-3 space-y-2">
+   791→              {cart.map((item, index) => (
+   792→                <div
+   793→                  key={`${item.productId}-${item.size}-${item.color}`}
+   794→                  className="p-3 rounded-lg border bg-background flex gap-3"
+   795→                >
+   796→                  <div className="w-12 h-16 rounded overflow-hidden bg-muted shrink-0">
+   797→                    {item.image ? (
+   798→                      <img
+   799→                        src={item.image}
+   800→                        alt={item.name}
+   801→                        className="w-full h-full object-cover"
+   802→                      />
+   803→                    ) : (
+   804→                      <div className="w-full h-full flex items-center justify-center">
+   805→                        <Package className="w-4 h-4 text-muted-foreground" />
+   806→                      </div>
+   807→                    )}
+   808→                  </div>
+   809→                  <div className="flex-1 min-w-0">
+   810→                    <p className="font-semibold text-sm truncate">{item.name}</p>
+   811→                    <p className="text-xs text-muted-foreground">
+   812→                      {item.size} · {item.color}
+   813→                    </p>
+   814→                    <div className="flex items-center justify-between mt-1">
+   815→                      <div className="flex items-center gap-1">
+   816→                        <Button
+   817→                          variant="outline"
+   818→                          size="sm"
+   819→                          className="h-7 w-7 p-0"
+   820→                          onClick={() =>
+   821→                            handleUpdateCartItemQuantity(
+   822→                              index,
+   823→                              item.quantity - 1
+   824→                            )
+   825→                          }
+   826→                        >
+   827→                          <Minus className="w-3 h-3" />
+   828→                        </Button>
+   829→                        <span className="w-8 text-center text-sm font-bold">
+   830→                          {item.quantity}
+   831→                        </span>
+   832→                        <Button
+   833→                          variant="outline"
+   834→                          size="sm"
+   835→                          className="h-7 w-7 p-0"
+   836→                          onClick={() =>
+   837→                            handleUpdateCartItemQuantity(
+   838→                              index,
+   839→                              item.quantity + 1
+   840→                            )
+   841→                          }
+   842→                        >
+   843→                          <Plus className="w-3 h-3" />
+   844→                        </Button>
+   845→                      </div>
+   846→                      <p className="font-bold text-sm text-kabyle-terracotta">
+   847→                        {formatPrice(item.unitPrice * item.quantity)}
+   848→                      </p>
+   849→                    </div>
+   850→                  </div>
+   851→                  <Button
+   852→                    variant="ghost"
+   853→                    size="sm"
+   854→                    className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive shrink-0"
+   855→                    onClick={() => handleRemoveCartItem(index)}
+   856→                  >
+   857→                    <X className="w-4 h-4" />
+   858→                  </Button>
+   859→                </div>
+   860→              ))}
+   861→            </div>
+   862→          )}
+   863→        </ScrollArea>
+   864→
+   865→        {/* Cart Footer / Checkout */}
+   866→        <div className="border-t p-4 bg-muted/30 space-y-3">
+   867→          {/* Subtotal */}
+   868→          {cart.length > 0 && (
+   869→            <div className="flex items-center justify-between text-sm">
+   870→              <span className="text-muted-foreground">Sous-total</span>
+   871→              <span className="font-semibold">{formatPrice(subtotal)}</span>
+   872→            </div>
+   873→          )}
+   874→
+   875→          {/* Payment Method Toggle */}
+   876→          {cart.length > 0 && (
+   877→            <div className="flex gap-2">
+   878→              <Button
+   879→                variant={paymentMethod === "cash" ? "default" : "outline"}
+   880→                className={`flex-1 h-11 text-base gap-2 ${
+   881→                  paymentMethod === "cash"
+   882→                    ? "bg-kabyle-terracotta text-kabyle-cream hover:bg-kabyle-terracotta/90"
+   883→                    : ""
+   884→                }`}
+   885→                onClick={() => setPaymentMethod("cash")}
+   886→              >
+   887→                <Banknote className="w-5 h-5" />
+   888→                Espèces
+   889→              </Button>
+   890→              <Button
+   891→                variant={paymentMethod === "card" ? "default" : "outline"}
+   892→                className={`flex-1 h-11 text-base gap-2 ${
+   893→                  paymentMethod === "card"
+   894→                    ? "bg-kabyle-terracotta text-kabyle-cream hover:bg-kabyle-terracotta/90"
+   895→                    : ""
+   896→                }`}
+   897→                onClick={() => setPaymentMethod("card")}
+   898→              >
+   899→                <CreditCard className="w-5 h-5" />
+   900→                Carte
+   901→              </Button>
+   902→            </div>
+   903→          )}
+   904→
+   905→          {/* Discount */}
+   906→          {cart.length > 0 && (
+   907→            <div className="flex items-center gap-2">
+   908→              <Tag className="w-4 h-4 text-muted-foreground shrink-0" />
+   909→              <Input
+   910→                type="number"
+   911→                min={0}
+   912→                placeholder="Remise (DA)"
+   913→                value={discount || ""}
+   914→                onChange={(e) => {
+   915→                  const val = parseInt(e.target.value) || 0;
+   916→                  setDiscount(Math.max(0, Math.min(val, subtotal)));
+   917→                }}
+   918→                className="h-10 text-sm"
+   919→              />
+   920→            </div>
+   921→          )}
+   922→
+   923→          {/* Total */}
+   924→          {cart.length > 0 && (
+   925→            <div className="flex items-center justify-between py-2">
+   926→              <span className="text-lg font-bold">Total</span>
+   927→              <span className="text-2xl font-bold text-kabyle-terracotta">
+   928→                {formatPrice(total)}
+   929→              </span>
+   930→            </div>
+   931→          )}
+   932→
+   933→          {/* Action Buttons */}
+   934→          <div className="space-y-2">
+   935→            <Button
+   936→              className="w-full h-14 text-lg font-bold bg-kabyle-olive hover:bg-kabyle-olive/90 text-white"
+   937→              onClick={handleCheckout}
+   938→              disabled={cart.length === 0 || checkoutLoading}
+   939→            >
+   940→              {checkoutLoading ? (
+   941→                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+   942→              ) : (
+   943→                <CreditCard className="w-5 h-5 mr-2" />
+   944→              )}
+   945→              Encaisser (F4)
+   946→            </Button>
+   947→
+   948→            {cart.length > 0 && (
+   949→              <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+   950→                <span>F2 = Recherche</span>
+   951→                <span>F4 = Encaisser</span>
+   952→                <span>Esc = Vider</span>
+   953→              </div>
+   954→            )}
+   955→          </div>
+   956→        </div>
+   957→      </div>
+   958→
+   959→      {/* ─── Receipt Dialog ─── */}
+   960→      <Dialog open={showReceipt} onOpenChange={setShowReceipt}>
+   961→        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+   962→          <DialogHeader>
+   963→            <DialogTitle className="text-center text-kabyle-terracotta">
+   964→              Vente Enregistrée
+   965→            </DialogTitle>
+   966→          </DialogHeader>
+   967→
+   968→          {lastSale && (
+   969→            <div className="space-y-4" id="receipt">
+   970→              {/* Receipt Header */}
+   971→              <div className="text-center border-b pb-4">
+   972→                <h3 className="font-bold text-lg">Robe Kabyle Kenza</h3>
+   973→                <p className="text-sm text-muted-foreground">
+   974→                  Reçu de vente
+   975→                </p>
+   976→                <Badge
+   977→                  variant="secondary"
+   978→                  className="mt-2 text-base font-mono"
+   979→                >
+   980→                  {lastSale.saleNumber}
+   981→                </Badge>
+   982→              </div>
+   983→
+   984→              {/* Sale Info */}
+   985→              <div className="grid grid-cols-2 gap-2 text-sm">
+   986→                <div>
+   987→                  <span className="text-muted-foreground">Date:</span>
+   988→                </div>
+   989→                <div className="text-right">{formatDate(lastSale.createdAt)}</div>
+   990→                <div>
+   991→                  <span className="text-muted-foreground">Vendeur:</span>
+   992→                </div>
+   993→                <div className="text-right">{lastSale.soldBy}</div>
+   994→                <div>
+   995→                  <span className="text-muted-foreground">Paiement:</span>
+   996→                </div>
+   997→                <div className="text-right">
+   998→                  {lastSale.paymentMethod === "cash" ? "Espèces" : "Carte"}
+   999→                </div>
+  1000→              </div>
+  1001→
+  1002→              <Separator />
+  1003→
+  1004→              {/* Items */}
+  1005→              <div className="space-y-2">
+  1006→                {lastSale.items.map((item) => (
+  1007→                  <div
+  1008→                    key={item.id}
+  1009→                    className="flex items-start justify-between text-sm"
+  1010→                  >
+  1011→                    <div className="min-w-0 flex-1">
+  1012→                      <p className="font-medium truncate">
+  1013→                        {item.product.name}
+  1014→                      </p>
+  1015→                      <p className="text-xs text-muted-foreground">
+  1016→                        {item.size} · {item.color} × {item.quantity}
+  1017→                      </p>
+  1018→                    </div>
+  1019→                    <p className="font-semibold ml-2 shrink-0">
+  1020→                      {formatPrice(item.unitPrice * item.quantity)}
+  1021→                    </p>
+  1022→                  </div>
+  1023→                ))}
+  1024→              </div>
+  1025→
+  1026→              <Separator />
+  1027→
+  1028→              {/* Discount */}
+  1029→              {discount > 0 && (
+  1030→                <div className="flex items-center justify-between text-sm">
+  1031→                  <span className="text-muted-foreground">Remise</span>
+  1032→                  <span className="text-destructive">-{formatPrice(discount)}</span>
+  1033→                </div>
+  1034→              )}
+  1035→
+  1036→              {/* Total */}
+  1037→              <div className="flex items-center justify-between text-lg font-bold py-2">
+  1038→                <span>Total</span>
+  1039→                <span className="text-kabyle-terracotta">
+  1040→                  {formatPrice(lastSale.totalAmount - discount)}
+  1041→                </span>
+  1042→              </div>
+  1043→
+  1044→              <Separator />
+  1045→
+  1046→              {/* Footer */}
+  1047→              <p className="text-center text-xs text-muted-foreground">
+  1048→                Merci pour votre achat !
+  1049→                <br />
+  1050→                Robe Kabyle Kenza vous souhaite une excellente journée.
+  1051→              </p>
+  1052→            </div>
+  1053→          )}
+  1054→
+  1055→          {/* Actions */}
+  1056→          <div className="flex gap-3 mt-4">
+  1057→            <Button
+  1058→              variant="outline"
+  1059→              className="flex-1 h-12 text-base"
+  1060→              onClick={handlePrintReceipt}
+  1061→            >
+  1062→              <Printer className="w-5 h-5 mr-2" />
+  1063→              Imprimer
+  1064→            </Button>
+  1065→            <Button
+  1066→              className="flex-1 h-12 text-base bg-kabyle-terracotta hover:bg-kabyle-terracotta/90 text-kabyle-cream"
+  1067→              onClick={handleNewSale}
+  1068→            >
+  1069→              <RefreshCw className="w-5 h-5 mr-2" />
+  1070→              Nouvelle vente
+  1071→            </Button>
+  1072→          </div>
+  1073→        </DialogContent>
+  1074→      </Dialog>
+  1075→    </div>
+  1076→  );
+  1077→}
+  1078→
