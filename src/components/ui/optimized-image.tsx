@@ -32,6 +32,7 @@ export default function OptimizedImage({
   quality,
   fallbackSrc = DEFAULT_FALLBACK,
   className,
+  fill,
   ...props
 }: OptimizedImageProps) {
   const [imgSrc, setImgSrc] = useState<string>(() => {
@@ -53,8 +54,34 @@ export default function OptimizedImage({
     }
   };
 
+  // When using `fill`, the Image needs a positioned parent with explicit dimensions.
+  // We wrap it in a div that fills its parent completely.
+  if (fill) {
+    return (
+      <div className="absolute inset-0 overflow-hidden">
+        <Image
+          src={hasError ? fallbackSrc : imgSrc}
+          alt={alt}
+          fill
+          onLoad={() => setIsLoading(false)}
+          onError={handleError}
+          className={cn(
+            "transition-opacity duration-300",
+            isLoading && !hasError ? "opacity-0" : "opacity-100",
+            className
+          )}
+          {...props}
+        />
+        {isLoading && !hasError && (
+          <div className="absolute inset-0 animate-pulse bg-muted" />
+        )}
+      </div>
+    );
+  }
+
+  // Non-fill mode: standard Image rendering
   return (
-    <div className={cn("relative overflow-hidden", className)}>
+    <>
       <Image
         src={hasError ? fallbackSrc : imgSrc}
         alt={alt}
@@ -63,13 +90,13 @@ export default function OptimizedImage({
         className={cn(
           "transition-opacity duration-300",
           isLoading && !hasError ? "opacity-0" : "opacity-100",
-          props.className
+          className
         )}
         {...props}
       />
       {isLoading && !hasError && (
-        <div className="absolute inset-0 animate-pulse bg-muted" />
+        <div className="animate-pulse bg-muted rounded-md" style={{ width: props.width, height: props.height }} />
       )}
-    </div>
+    </>
   );
 }
