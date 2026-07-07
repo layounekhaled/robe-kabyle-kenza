@@ -11,6 +11,7 @@ import { getThumbnailUrl, getOptimizedUrl, isSupabaseUrl } from "@/lib/supabase-
  * - Lazy loading by default
  * - Fallback placeholder when image fails to load
  * - Smooth loading transition
+ * - Brand logo shown during loading
  */
 
 interface OptimizedImageProps extends Omit<ImageProps, "onError"> {
@@ -22,8 +23,36 @@ interface OptimizedImageProps extends Omit<ImageProps, "onError"> {
   fallbackSrc?: string;
 }
 
-// Default fallback: a simple gray placeholder SVG
-const DEFAULT_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' fill='%23f3f4f6'%3E%3Crect width='400' height='400' rx='8'/%3E%3Ctext x='200' y='200' text-anchor='middle' dominant-baseline='middle' fill='%239ca3af' font-family='sans-serif' font-size='16'%3EImage indisponible%3C/text%3E%3C/svg%3E";
+// Default fallback: FRET.DIRECT logo
+const DEFAULT_FALLBACK = "/logo-fret.png";
+
+// Loading placeholder: FRET.DIRECT logo centered on muted background
+function LoadingPlaceholder({ fill, width, height }: { fill?: boolean; width?: number; height?: number }) {
+  if (fill) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+        <img
+          src="/logo-fret.png"
+          alt="Chargement..."
+          className="w-1/3 h-1/3 object-contain opacity-40"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex items-center justify-center bg-muted/50 rounded-md"
+      style={{ width, height }}
+    >
+      <img
+        src="/logo-fret.png"
+        alt="Chargement..."
+        className="w-12 h-12 object-contain opacity-40"
+      />
+    </div>
+  );
+}
 
 export default function OptimizedImage({
   src,
@@ -73,7 +102,7 @@ export default function OptimizedImage({
           {...props}
         />
         {isLoading && !hasError && (
-          <div className="absolute inset-0 animate-pulse bg-muted" />
+          <LoadingPlaceholder fill />
         )}
       </div>
     );
@@ -95,7 +124,7 @@ export default function OptimizedImage({
         {...props}
       />
       {isLoading && !hasError && (
-        <div className="animate-pulse bg-muted rounded-md" style={{ width: props.width, height: props.height }} />
+        <LoadingPlaceholder width={props.width as number} height={props.height as number} />
       )}
     </>
   );
