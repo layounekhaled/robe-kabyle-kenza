@@ -28,17 +28,18 @@ export default function AdminLoginPage() {
         email,
         password,
         redirect: false,
+        callbackUrl: '/admin',
       });
 
       if (result?.error) {
         setError('Email ou mot de passe incorrect');
+        setLoading(false);
       } else {
-        // Use window.location for a full page reload to ensure session is established
+        // Full page reload to ensure session cookie is set properly
         window.location.href = '/admin';
       }
     } catch {
       setError('Une erreur est survenue lors de la connexion');
-    } finally {
       setLoading(false);
     }
   };

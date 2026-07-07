@@ -49,20 +49,49 @@ export default function AdminLayout({
 
   const isLoginPage = pathname === '/admin/login';
 
+  // Timeout for loading state - prevent infinite spinner
+  const [timedOut, setTimedOut] = useState(false);
+
+  useEffect(() => {
+    if (status === 'loading') {
+      const timer = setTimeout(() => setTimedOut(true), 8000);
+      return () => clearTimeout(timer);
+    } else {
+      setTimedOut(false);
+    }
+  }, [status]);
+
   // Redirect to login if not authenticated
   useEffect(() => {
     if (status === 'unauthenticated' && !isLoginPage) {
-      router.push('/admin/login');
+      window.location.href = '/admin/login';
     }
-  }, [status, isLoginPage, router]);
+  }, [status, isLoginPage]);
 
   // Show loading while checking auth
-  if (status === 'loading') {
+  if (status === 'loading' && !timedOut) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="h-10 w-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
           <p className="text-muted-foreground text-sm">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If loading timed out, force redirect to login
+  if (status === 'loading' && timedOut) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-muted-foreground text-sm">Chargement de la session...</p>
+          <Button
+            variant="outline"
+            onClick={() => { window.location.href = '/admin/login'; }}
+          >
+            Aller à la connexion
+          </Button>
         </div>
       </div>
     );
