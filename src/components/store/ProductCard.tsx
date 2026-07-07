@@ -57,7 +57,7 @@ function getStockStatus(
 
 export default function ProductCard({ product }: ProductCardProps) {
   const imageUrl =
-    product.images.length > 0 ? product.images[0].url : "/logo.svg";
+    product.images.length > 0 ? product.images[0].url : "/logo-fret.png";
   const imageAlt =
     product.images.length > 0 && product.images[0].alt
       ? product.images[0].alt

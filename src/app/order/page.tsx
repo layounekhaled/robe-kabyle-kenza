@@ -541,7 +541,7 @@ function OrderFormContent() {
                                 >
                                   <div className="relative aspect-[3/4] bg-muted">
                                     <Image
-                                      src={product.images.length > 0 ? product.images[0].url : "/logo.svg"}
+                                      src={product.images.length > 0 ? product.images[0].url : "/logo-fret.png"}
                                       alt={product.name}
                                       fill
                                       sizes="33vw"
@@ -569,7 +569,7 @@ function OrderFormContent() {
                           <div className="flex gap-4 p-4 rounded-xl border bg-kabyle-cream/20">
                             <div className="relative h-24 w-20 shrink-0 rounded-lg overflow-hidden bg-muted">
                               <Image
-                                src={selectedProduct?.images?.[0]?.url || "/logo.svg"}
+                                src={selectedProduct?.images?.[0]?.url || "/logo-fret.png"}
                                 alt={selectedProduct?.name || ""}
                                 fill
                                 sizes="80px"
@@ -1014,7 +1014,7 @@ function OrderFormContent() {
                           <div className="flex gap-3 p-3 rounded-lg bg-muted/50">
                             <div className="relative h-16 w-14 shrink-0 rounded-lg overflow-hidden bg-muted">
                               <Image
-                                src={selectedProduct.images?.[0]?.url || "/logo.svg"}
+                                src={selectedProduct.images?.[0]?.url || "/logo-fret.png"}
                                 alt={selectedProduct.name}
                                 fill
                                 sizes="56px"

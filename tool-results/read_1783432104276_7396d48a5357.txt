@@ -1,0 +1,1181 @@
+     1→"use client";
+     2→
+     3→import { useState, useEffect, Suspense } from "react";
+     4→import { useSearchParams, useRouter } from "next/navigation";
+     5→import Link from "next/link";
+     6→import Image from "next/image";
+     7→import { useForm } from "react-hook-form";
+     8→import { z } from "zod";
+     9→import { zodResolver } from "@hookform/resolvers/zod";
+    10→import {
+    11→  Minus,
+    12→  Plus,
+    13→  ShoppingBag,
+    14→  User,
+    15→  MapPin,
+    16→  Package,
+    17→  Phone,
+    18→  Loader2,
+    19→  PartyPopper,
+    20→  ArrowLeft,
+    21→  Check,
+    22→  X,
+    23→  Search,
+    24→  Home,
+    25→  MapPinned,
+    26→} from "lucide-react";
+    27→import { Button } from "@/components/ui/button";
+    28→import { Input } from "@/components/ui/input";
+    29→import { Label } from "@/components/ui/label";
+    30→import { Textarea } from "@/components/ui/textarea";
+    31→import { Badge } from "@/components/ui/badge";
+    32→import { Card, CardContent } from "@/components/ui/card";
+    33→import { Separator } from "@/components/ui/separator";
+    34→import {
+    35→  Select,
+    36→  SelectContent,
+    37→  SelectItem,
+    38→  SelectTrigger,
+    39→  SelectValue,
+    40→} from "@/components/ui/select";
+    41→import {
+    42→  Form,
+    43→  FormControl,
+    44→  FormField,
+    45→  FormItem,
+    46→  FormLabel,
+    47→  FormMessage,
+    48→} from "@/components/ui/form";
+    49→import Navbar from "@/components/store/Navbar";
+    50→import Footer from "@/components/store/Footer";
+    51→import { cn } from "@/lib/utils";
+    52→import { toast } from "sonner";
+    53→
+    54→// Types
+    55→interface ProductImage {
+    56→  id: string;
+    57→  url: string;
+    58→  alt: string | null;
+    59→  sortOrder: number;
+    60→}
+    61→
+    62→interface ProductVariant {
+    63→  id: string;
+    64→  size: string;
+    65→  color: string;
+    66→  stock: number;
+    67→}
+    68→
+    69→interface Product {
+    70→  id: string;
+    71→  reference: string;
+    72→  name: string;
+    73→  price: number;
+    74→  images: ProductImage[];
+    75→  variants: ProductVariant[];
+    76→}
+    77→
+    78→interface Wilaya {
+    79→  id: number;
+    80→  name: string;
+    81→  code: number;
+    82→}
+    83→
+    84→interface Commune {
+    85→  id: number;
+    86→  name: string;
+    87→  wilayaId: number;
+    88→  codePostal: string;
+    89→  hasStopDesk: boolean;
+    90→}
+    91→
+    92→const COLOR_MAP: Record<string, string> = {
+    93→  Rouge: "bg-red-500",
+    94→  Bleu: "bg-blue-500",
+    95→  Vert: "bg-green-500",
+    96→  Noir: "bg-gray-800",
+    97→  Blanc: "bg-white border border-gray-300",
+    98→  Or: "bg-yellow-500",
+    99→};
+   100→
+   101→function formatPrice(price: number): string {
+   102→  return price.toLocaleString("fr-FR") + " DA";
+   103→}
+   104→
+   105→const customerSchema = z.object({
+   106→  name: z.string().min(2, "Le nom est requis (min. 2 caractères)"),
+   107→  phone: z
+   108→    .string()
+   109→    .min(10, "Numéro de téléphone invalide")
+   110→    .regex(/^(0|\+213)[5-7]\d{8}$/, "Format: 05XXXXXXXX ou +2135XXXXXXXX"),
+   111→  wilayaId: z.string().min(1, "Veuillez sélectionner une wilaya"),
+   112→  communeId: z.string().min(1, "Veuillez sélectionner une commune"),
+   113→  address: z.string().min(5, "L'adresse est requise (min. 5 caractères)"),
+   114→  notes: z.string().optional(),
+   115→  deliveryType: z.enum(["home", "stopdesk"]).default("home"),
+   116→});
+   117→
+   118→type CustomerFormValues = z.infer<typeof customerSchema>;
+   119→
+   120→function OrderFormContent() {
+   121→  const searchParams = useSearchParams();
+   122→  const router = useRouter();
+   123→
+   124→  const preselectedProductId = searchParams.get("productId");
+   125→  const preselectedSize = searchParams.get("size");
+   126→  const preselectedColor = searchParams.get("color");
+   127→  const preselectedQty = searchParams.get("qty");
+   128→
+   129→  // Product selection
+   130→  const [products, setProducts] = useState<Product[]>([]);
+   131→  const [selectedProductId, setSelectedProductId] = useState<string | null>(
+   132→    preselectedProductId
+   133→  );
+   134→  const [selectedSize, setSelectedSize] = useState<string | null>(
+   135→    preselectedSize
+   136→  );
+   137→  const [selectedColor, setSelectedColor] = useState<string | null>(
+   138→    preselectedColor
+   139→  );
+   140→  const [quantity, setQuantity] = useState(
+   141→    preselectedQty ? parseInt(preselectedQty) : 1
+   142→  );
+   143→  const [loadingProducts, setLoadingProducts] = useState(true);
+   144→  const [searchQuery, setSearchQuery] = useState("");
+   145→
+   146→  // Customer info
+   147→  const [wilayas, setWilayas] = useState<Wilaya[]>([]);
+   148→  const [communes, setCommunes] = useState<Commune[]>([]);
+   149→  const [loadingWilayas, setLoadingWilayas] = useState(false);
+   150→  const [loadingCommunes, setLoadingCommunes] = useState(false);
+   151→
+   152→  // Shipping
+   153→  const [deliveryType, setDeliveryType] = useState<"home" | "stopdesk">("home");
+   154→  const [shippingRates, setShippingRates] = useState<{ home: number; stopDesk: number; source: string } | null>(null);
+   155→  const [shippingCost, setShippingCost] = useState<number | null>(null);
+   156→  const [loadingShipping, setLoadingShipping] = useState(false);
+   157→  const [allFees, setAllFees] = useState<Record<number, { home: number; stopDesk: number }> | null>(null);
+   158→
+   159→  // Order result
+   160→  const [orderResult, setOrderResult] = useState<{
+   161→    orderNumber: string;
+   162→    totalAmount: number;
+   163→  } | null>(null);
+   164→  const [submitted, setSubmitted] = useState(false);
+   165→  const [submitting, setSubmitting] = useState(false);
+   166→
+   167→  // Form
+   168→  const form = useForm<CustomerFormValues>({
+   169→    resolver: zodResolver(customerSchema),
+   170→    defaultValues: {
+   171→      name: "",
+   172→      phone: "",
+   173→      wilayaId: "",
+   174→      communeId: "",
+   175→      address: "",
+   176→      notes: "",
+   177→    },
+   178→  });
+   179→
+   180→  // Selected product details
+   181→  const selectedProduct = products.find((p) => p.id === selectedProductId);
+   182→  const sizes = selectedProduct
+   183→    ? [...new Set(selectedProduct.variants.map((v) => v.size))]
+   184→    : [];
+   185→  const colorsForSize = selectedProduct && selectedSize
+   186→    ? [...new Set(selectedProduct.variants.filter((v) => v.size === selectedSize).map((v) => v.color))]
+   187→    : selectedProduct
+   188→    ? [...new Set(selectedProduct.variants.map((v) => v.color))]
+   189→    : [];
+   190→  const inStockColorsForSize = selectedSize
+   191→    ? selectedProduct?.variants
+   192→        .filter((v) => v.size === selectedSize && v.stock > 0)
+   193→        .map((v) => v.color) || []
+   194→    : colorsForSize;
+   195→  const sizesForColor = selectedColor
+   196→    ? [...new Set(selectedProduct?.variants.filter((v) => v.color === selectedColor).map((v) => v.size))] || []
+   197→    : sizes;
+   198→  const inStockSizesForColor = selectedColor
+   199→    ? selectedProduct?.variants
+   200→        .filter((v) => v.color === selectedColor && v.stock > 0)
+   201→        .map((v) => v.size) || []
+   202→    : sizes;
+   203→
+   204→  const selectedVariant = selectedProduct?.variants.find(
+   205→    (v) => v.size === selectedSize && v.color === selectedColor
+   206→  );
+   207→  const currentStock = selectedVariant?.stock ?? 0;
+   208→
+   209→  // Filtered products for search
+   210→  const filteredProducts = products.filter(
+   211→    (p) =>
+   212→      !searchQuery ||
+   213→      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+   214→      p.reference.toLowerCase().includes(searchQuery.toLowerCase())
+   215→  );
+   216→
+   217→  // Load products
+   218→  useEffect(() => {
+   219→    async function loadProducts() {
+   220→      try {
+   221→        const res = await fetch("/api/products?limit=100");
+   222→        if (res.ok) {
+   223→          const data = await res.json();
+   224→          setProducts(data.products || []);
+   225→        }
+   226→      } catch {
+   227→        // silently fail
+   228→      } finally {
+   229→        setLoadingProducts(false);
+   230→      }
+   231→    }
+   232→    loadProducts();
+   233→  }, []);
+   234→
+   235→  // Load wilayas and shipping fees
+   236→  useEffect(() => {
+   237→    async function loadWilayas() {
+   238→      setLoadingWilayas(true);
+   239→      try {
+   240→        const res = await fetch("/api/ecotrack?action=wilayas");
+   241→        if (res.ok) {
+   242→          const data = await res.json();
+   243→          setWilayas(data.wilayas || []);
+   244→        }
+   245→      } catch {
+   246→        toast.error("Impossible de charger les wilayas. Veuillez réessayer.");
+   247→      } finally {
+   248→        setLoadingWilayas(false);
+   249→      }
+   250→    }
+   251→    async function loadFees() {
+   252→      try {
+   253→        const res = await fetch("/api/ecotrack?action=fees");
+   254→        if (res.ok) {
+   255→          const data = await res.json();
+   256→          setAllFees(data.fees || null);
+   257→        }
+   258→      } catch {
+   259→        // Fees will be fetched per wilaya as fallback
+   260→      }
+   261→    }
+   262→    loadWilayas();
+   263→    loadFees();
+   264→  }, []);
+   265→
+   266→  // Load communes when wilaya changes
+   267→  const selectedWilayaId = form.watch("wilayaId");
+   268→  useEffect(() => {
+   269→    if (!selectedWilayaId) {
+   270→      setCommunes([]);
+   271→      return;
+   272→    }
+   273→    async function loadCommunes() {
+   274→      setLoadingCommunes(true);
+   275→      try {
+   276→        const res = await fetch(
+   277→          `/api/ecotrack?action=communes&wilayaId=${selectedWilayaId}`
+   278→        );
+   279→        if (res.ok) {
+   280→          const data = await res.json();
+   281→          setCommunes(data.communes || []);
+   282→        }
+   283→      } catch {
+   284→        toast.error("Impossible de charger les communes");
+   285→      } finally {
+   286→        setLoadingCommunes(false);
+   287→      }
+   288→    }
+   289→    loadCommunes();
+   290→    form.setValue("communeId", "");
+   291→  }, [selectedWilayaId, form]);
+   292→
+   293→  // Reset commune when delivery type changes (stop desk requires specific communes)
+   294→  useEffect(() => {
+   295→    form.setValue("communeId", "");
+   296→  }, [deliveryType, form]);
+   297→
+   298→  // Filtered communes based on delivery type
+   299→  const filteredCommunes = deliveryType === "stopdesk"
+   300→    ? communes.filter((c) => c.hasStopDesk)
+   301→    : communes;
+   302→
+   303→  // Check if stop desk is available in the selected wilaya
+   304→  const hasStopDeskInWilaya = communes.some((c) => c.hasStopDesk);
+   305→
+   306→  // Calculate shipping rates when wilaya is selected
+   307→  useEffect(() => {
+   308→    if (!selectedWilayaId) {
+   309→      setShippingCost(null);
+   310→      setShippingRates(null);
+   311→      return;
+   312→    }
+   313→    async function calcShipping() {
+   314→      setLoadingShipping(true);
+   315→      try {
+   316→        const wilayaCode = parseInt(selectedWilayaId);
+   317→        // First try to use cached fees
+   318→        if (allFees && allFees[wilayaCode]) {
+   319→          const rates = allFees[wilayaCode];
+   320→          setShippingRates({ home: rates.home, stopDesk: rates.stopDesk, source: "api" });
+   321→          setShippingCost(deliveryType === "home" ? rates.home : rates.stopDesk);
+   322→          setLoadingShipping(false);
+   323→          return;
+   324→        }
+   325→        // Fallback: fetch rates for this specific wilaya
+   326→        const res = await fetch(
+   327→          `/api/ecotrack?action=rates&wilayaId=${selectedWilayaId}`
+   328→        );
+   329→        if (res.ok) {
+   330→          const data = await res.json();
+   331→          const rates = data.rates;
+   332→          setShippingRates(rates);
+   333→          // Set shipping cost based on current delivery type
+   334→          setShippingCost(deliveryType === "home" ? rates.home : rates.stopDesk);
+   335→        }
+   336→      } catch {
+   337→        setShippingCost(null);
+   338→        setShippingRates(null);
+   339→      } finally {
+   340→        setLoadingShipping(false);
+   341→      }
+   342→    }
+   343→    calcShipping();
+   344→  }, [selectedWilayaId, deliveryType, allFees]);
+   345→
+   346→  // Submit handler
+   347→  const handleSubmitOrder = async () => {
+   348→    if (!selectedProduct || !selectedSize || !selectedColor) {
+   349→      toast.error("Veuillez sélectionner un produit, une taille et une couleur");
+   350→      return;
+   351→    }
+   352→    if (currentStock === 0) {
+   353→      toast.error("Ce produit est en rupture de stock");
+   354→      return;
+   355→    }
+   356→
+   357→    const formValid = await form.trigger();
+   358→    if (!formValid) return;
+   359→
+   360→    setSubmitting(true);
+   361→    try {
+   362→      const formValues = form.getValues();
+   363→      // wilayaId is the wilaya code (e.g., "16" for Alger)
+   364→      const selectedWilaya = wilayas.find(
+   365→        (w) => String(w.code) === formValues.wilayaId
+   366→      );
+   367→      // communeId is the commune name (e.g., "Alger Centre")
+   368→      const selectedCommune = communes.find(
+   369→        (c) => c.name === formValues.communeId
+   370→      );
+   371→
+   372→      const payload = {
+   373→        customerName: formValues.name,
+   374→        customerPhone: formValues.phone,
+   375→        customerWilaya: selectedWilaya?.name || formValues.wilayaId,
+   376→        customerWilayaCode: formValues.wilayaId,
+   377→        customerCommune: selectedCommune?.name || formValues.communeId,
+   378→        customerAddress: formValues.address,
+   379→        items: [
+   380→          {
+   381→            productId: selectedProduct.id,
+   382→            size: selectedSize,
+   383→            color: selectedColor,
+   384→            quantity,
+   385→          },
+   386→        ],
+   387→        notes: formValues.notes || undefined,
+   388→        shippingCost: shippingCost || 0,
+   389→        deliveryType,
+   390→      };
+   391→
+   392→      const res = await fetch("/api/orders", {
+   393→        method: "POST",
+   394→        headers: { "Content-Type": "application/json" },
+   395→        body: JSON.stringify(payload),
+   396→      });
+   397→
+   398→      if (res.ok) {
+   399→        const data = await res.json();
+   400→        setOrderResult({
+   401→          orderNumber: data.order.orderNumber,
+   402→          totalAmount: data.order.totalAmount,
+   403→        });
+   404→        setSubmitted(true);
+   405→        toast.success("Commande créée avec succès !");
+   406→      } else {
+   407→        const error = await res.json();
+   408→        toast.error(error.error || "Erreur lors de la commande");
+   409→      }
+   410→    } catch {
+   411→      toast.error("Erreur de connexion. Veuillez réessayer.");
+   412→    } finally {
+   413→      setSubmitting(false);
+   414→    }
+   415→  };
+   416→
+   417→  const itemTotal = selectedProduct ? selectedProduct.price * quantity : 0;
+   418→  const totalWithShipping = itemTotal + (shippingCost || 0);
+   419→
+   420→  // ─────────── Confirmation screen ───────────
+   421→  if (submitted && orderResult) {
+   422→    return (
+   423→      <div className="min-h-screen flex flex-col">
+   424→        <Navbar />
+   425→        <main className="flex-1 flex items-center justify-center px-4">
+   426→          <div className="text-center space-y-6 max-w-md w-full">
+   427→            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+   428→              <PartyPopper className="h-10 w-10 text-green-600" />
+   429→            </div>
+   430→            <h2 className="text-2xl font-bold text-kabyle-dark">
+   431→              Commande Confirmée !
+   432→            </h2>
+   433→            <p className="text-muted-foreground">
+   434→              Votre commande a été enregistrée avec succès. Vous recevrez une
+   435→              confirmation par téléphone.
+   436→            </p>
+   437→            <Card className="border-kabyle-terracotta/20">
+   438→              <CardContent className="p-6 space-y-3">
+   439→                <div>
+   440→                  <p className="text-sm text-muted-foreground">Numéro de commande</p>
+   441→                  <p className="text-xl font-bold text-kabyle-terracotta">
+   442→                    {orderResult.orderNumber}
+   443→                  </p>
+   444→                </div>
+   445→                <Separator />
+   446→                <div>
+   447→                  <p className="text-sm text-muted-foreground">Montant total</p>
+   448→                  <p className="text-xl font-bold text-kabyle-dark">
+   449→                    {formatPrice(orderResult.totalAmount + (shippingCost || 0))}
+   450→                  </p>
+   451→                </div>
+   452→              </CardContent>
+   453→            </Card>
+   454→            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+   455→              <Link href="/catalog">
+   456→                <Button variant="outline" className="border-kabyle-terracotta text-kabyle-terracotta">
+   457→                  <ArrowLeft className="mr-2 h-4 w-4" />
+   458→                  Continuer les achats
+   459→                </Button>
+   460→              </Link>
+   461→              <Link href="/">
+   462→                <Button className="bg-kabyle-terracotta hover:bg-kabyle-red text-white">
+   463→                  Retour à l&apos;accueil
+   464→                </Button>
+   465→              </Link>
+   466→            </div>
+   467→          </div>
+   468→        </main>
+   469→        <Footer />
+   470→      </div>
+   471→    );
+   472→  }
+   473→
+   474→  // ─────────── Main unified form ───────────
+   475→  return (
+   476→    <div className="min-h-screen flex flex-col">
+   477→      <Navbar />
+   478→
+   479→      <main className="flex-1">
+   480→        {/* Header */}
+   481→        <div className="bg-kabyle-cream/50 kabyle-pattern border-b">
+   482→          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
+   483→            <h1 className="text-2xl sm:text-3xl font-bold text-kabyle-dark">
+   484→              <ShoppingBag className="inline-block mr-2 h-7 w-7 text-kabyle-terracotta" />
+   485→              Commander
+   486→            </h1>
+   487→            <p className="mt-1 text-muted-foreground">
+   488→              Remplissez le formulaire ci-dessous pour passer votre commande
+   489→            </p>
+   490→          </div>
+   491→        </div>
+   492→
+   493→        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
+   494→          <Form {...form}>
+   495→            <form onSubmit={form.handleSubmit(handleSubmitOrder)}>
+   496→              <div className="grid lg:grid-cols-5 gap-6 lg:gap-8">
+   497→
+   498→                {/* ═══════ LEFT: Product Selection (3 cols) ═══════ */}
+   499→                <div className="lg:col-span-3 space-y-6">
+   500→
+   501→                  {/* ── Section: Produit ── */}
+   502→                  <Card>
+   503→                    <CardContent className="p-5 space-y-5">
+   504→                      <h2 className="text-lg font-semibold text-kabyle-dark flex items-center gap-2">
+   505→                        <ShoppingBag className="h-5 w-5 text-kabyle-terracotta" />
+   506→                        Produit
+   507→                      </h2>
+   508→
+   509→                      {!selectedProductId ? (
+   510→                        <>
+   511→                          {/* Search */}
+   512→                          <div className="relative">
+   513→                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+   514→                            <Input
+   515→                              placeholder="Rechercher par nom ou référence..."
+   516→                              value={searchQuery}
+   517→                              onChange={(e) => setSearchQuery(e.target.value)}
+   518→                              className="pl-10"
+   519→                            />
+   520→                          </div>
+   521→
+   522→                          {loadingProducts ? (
+   523→                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+   524→                              {Array.from({ length: 6 }).map((_, i) => (
+   525→                                <div key={i} className="animate-pulse rounded-lg border bg-muted h-44" />
+   526→                              ))}
+   527→                            </div>
+   528→                          ) : (
+   529→                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[55vh] overflow-y-auto custom-scrollbar pr-1">
+   530→                              {filteredProducts.map((product) => (
+   531→                                <button
+   532→                                  key={product.id}
+   533→                                  type="button"
+   534→                                  onClick={() => {
+   535→                                    setSelectedProductId(product.id);
+   536→                                    setSelectedSize(null);
+   537→                                    setSelectedColor(null);
+   538→                                    setQuantity(1);
+   539→                                  }}
+   540→                                  className="group text-left rounded-lg border overflow-hidden hover:border-kabyle-terracotta hover:shadow-md transition-all"
+   541→                                >
+   542→                                  <div className="relative aspect-[3/4] bg-muted">
+   543→                                    <Image
+   544→                                      src={product.images.length > 0 ? product.images[0].url : "/logo.svg"}
+   545→                                      alt={product.name}
+   546→                                      fill
+   547→                                      sizes="33vw"
+   548→                                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+   549→                                    />
+   550→                                  </div>
+   551→                                  <div className="p-2">
+   552→                                    <p className="text-xs text-muted-foreground font-mono">{product.reference}</p>
+   553→                                    <p className="text-sm font-medium text-kabyle-dark line-clamp-1">{product.name}</p>
+   554→                                    <p className="text-sm font-bold text-kabyle-terracotta">{formatPrice(product.price)}</p>
+   555→                                  </div>
+   556→                                </button>
+   557→                              ))}
+   558→                              {filteredProducts.length === 0 && (
+   559→                                <p className="col-span-full text-center text-muted-foreground py-8">
+   560→                                  Aucun produit trouvé
+   561→                                </p>
+   562→                              )}
+   563→                            </div>
+   564→                          )}
+   565→                        </>
+   566→                      ) : (
+   567→                        <div className="space-y-5">
+   568→                          {/* Selected product banner */}
+   569→                          <div className="flex gap-4 p-4 rounded-xl border bg-kabyle-cream/20">
+   570→                            <div className="relative h-24 w-20 shrink-0 rounded-lg overflow-hidden bg-muted">
+   571→                              <Image
+   572→                                src={selectedProduct?.images?.[0]?.url || "/logo.svg"}
+   573→                                alt={selectedProduct?.name || ""}
+   574→                                fill
+   575→                                sizes="80px"
+   576→                                className="object-cover"
+   577→                              />
+   578→                            </div>
+   579→                            <div className="flex-1 min-w-0">
+   580→                              <p className="text-xs text-muted-foreground font-mono">{selectedProduct?.reference}</p>
+   581→                              <h3 className="text-base font-semibold text-kabyle-dark">{selectedProduct?.name}</h3>
+   582→                              <p className="text-lg font-bold text-kabyle-terracotta">
+   583→                                {selectedProduct ? formatPrice(selectedProduct.price) : ""}
+   584→                              </p>
+   585→                            </div>
+   586→                            <Button
+   587→                              variant="ghost"
+   588→                              size="sm"
+   589→                              type="button"
+   590→                              onClick={() => {
+   591→                                setSelectedProductId(null);
+   592→                                setSelectedSize(null);
+   593→                                setSelectedColor(null);
+   594→                                setQuantity(1);
+   595→                              }}
+   596→                              className="text-muted-foreground shrink-0"
+   597→                            >
+   598→                              <X className="h-4 w-4 mr-1" />
+   599→                              Changer
+   600→                            </Button>
+   601→                          </div>
+   602→
+   603→                          {/* Size selector */}
+   604→                          <div className="space-y-3">
+   605→                            <Label className="text-sm font-semibold text-kabyle-dark">
+   606→                              Taille <span className="text-red-500">*</span>
+   607→                            </Label>
+   608→                            <div className="flex flex-wrap gap-2">
+   609→                              {sizesForColor.map((size) => {
+   610→                                const isInStock = inStockSizesForColor.includes(size);
+   611→                                return (
+   612→                                  <Button
+   613→                                    key={size}
+   614→                                    type="button"
+   615→                                    variant={selectedSize === size ? "default" : "outline"}
+   616→                                    size="sm"
+   617→                                    className={cn(
+   618→                                      "min-w-[48px]",
+   619→                                      selectedSize === size && "bg-kabyle-terracotta text-white hover:bg-kabyle-red",
+   620→                                      !isInStock && "opacity-50"
+   621→                                    )}
+   622→                                    onClick={() => {
+   623→                                      setSelectedSize(size);
+   624→                                      const colorsForNewSize = selectedProduct?.variants
+   625→                                        .filter((v) => v.size === size)
+   626→                                        .map((v) => v.color) || [];
+   627→                                      if (selectedColor && !colorsForNewSize.includes(selectedColor)) {
+   628→                                        const firstInStock = selectedProduct?.variants.find(
+   629→                                          (v) => v.size === size && v.stock > 0
+   630→                                        );
+   631→                                        setSelectedColor(firstInStock?.color || colorsForNewSize[0] || null);
+   632→                                      }
+   633→                                      setQuantity(1);
+   634→                                    }}
+   635→                                  >
+   636→                                    {size}
+   637→                                  </Button>
+   638→                                );
+   639→                              })}
+   640→                            </div>
+   641→                            {selectedSize === null && (
+   642→                              <p className="text-xs text-orange-600">Veuillez choisir une taille</p>
+   643→                            )}
+   644→                          </div>
+   645→
+   646→                          {/* Color selector */}
+   647→                          <div className="space-y-3">
+   648→                            <Label className="text-sm font-semibold text-kabyle-dark">
+   649→                              Couleur <span className="text-red-500">*</span>
+   650→                            </Label>
+   651→                            <div className="flex flex-wrap gap-2">
+   652→                              {colorsForSize.map((color) => {
+   653→                                const isInStock = inStockColorsForSize.includes(color);
+   654→                                return (
+   655→                                  <button
+   656→                                    key={color}
+   657→                                    type="button"
+   658→                                    onClick={() => {
+   659→                                      setSelectedColor(color);
+   660→                                      setQuantity(1);
+   661→                                      const sizesForNewColor = selectedProduct?.variants
+   662→                                        .filter((v) => v.color === color)
+   663→                                        .map((v) => v.size) || [];
+   664→                                      if (selectedSize && !sizesForNewColor.includes(selectedSize)) {
+   665→                                        const firstInStock = selectedProduct?.variants.find(
+   666→                                          (v) => v.color === color && v.stock > 0
+   667→                                        );
+   668→                                        setSelectedSize(firstInStock?.size || sizesForNewColor[0] || null);
+   669→                                      }
+   670→                                    }}
+   671→                                    className={cn(
+   672→                                      "flex items-center gap-2 px-3 py-2 rounded-lg border-2 text-sm font-medium transition-all cursor-pointer",
+   673→                                      selectedColor === color
+   674→                                        ? "border-kabyle-terracotta bg-kabyle-cream"
+   675→                                        : isInStock
+   676→                                        ? "border-transparent bg-muted hover:bg-kabyle-cream/50"
+   677→                                        : "border-transparent bg-muted opacity-50"
+   678→                                    )}
+   679→                                  >
+   680→                                    <span className={cn("h-4 w-4 rounded-full", COLOR_MAP[color] || "bg-gray-400")} />
+   681→                                    {color}
+   682→                                    {!isInStock && <span className="text-xs text-muted-foreground">(épuisé)</span>}
+   683→                                    {selectedColor === color && <Check className="h-3 w-3 text-kabyle-terracotta" />}
+   684→                                  </button>
+   685→                                );
+   686→                              })}
+   687→                            </div>
+   688→                            {selectedColor === null && selectedSize !== null && (
+   689→                              <p className="text-xs text-orange-600">Veuillez choisir une couleur</p>
+   690→                            )}
+   691→                          </div>
+   692→
+   693→                          {/* Stock + Quantity */}
+   694→                          {selectedSize && selectedColor && (
+   695→                            <div className="space-y-4">
+   696→                              {/* Stock */}
+   697→                              <div className="flex items-center gap-2">
+   698→                                <span className={cn(
+   699→                                  "h-2.5 w-2.5 rounded-full",
+   700→                                  currentStock > 3 && "bg-green-500",
+   701→                                  currentStock > 0 && currentStock <= 3 && "bg-orange-500",
+   702→                                  currentStock === 0 && "bg-red-500"
+   703→                                )} />
+   704→                                <span className={cn(
+   705→                                  "text-sm font-medium",
+   706→                                  currentStock > 3 && "text-green-700",
+   707→                                  currentStock > 0 && currentStock <= 3 && "text-orange-700",
+   708→                                  currentStock === 0 && "text-red-700"
+   709→                                )}>
+   710→                                  {currentStock > 3 ? "En stock" : currentStock > 0 ? `Plus que ${currentStock} en stock` : "Rupture de stock"}
+   711→                                </span>
+   712→                              </div>
+   713→
+   714→                              {/* Quantity */}
+   715→                              {currentStock > 0 && (
+   716→                                <div className="flex items-center gap-4">
+   717→                                  <Label className="text-sm font-semibold text-kabyle-dark">Quantité</Label>
+   718→                                  <div className="flex items-center gap-2">
+   719→                                    <Button
+   720→                                      type="button"
+   721→                                      variant="outline"
+   722→                                      size="icon"
+   723→                                      className="h-9 w-9"
+   724→                                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+   725→                                      disabled={quantity <= 1}
+   726→                                    >
+   727→                                      <Minus className="h-4 w-4" />
+   728→                                    </Button>
+   729→                                    <span className="w-10 text-center text-lg font-semibold">{quantity}</span>
+   730→                                    <Button
+   731→                                      type="button"
+   732→                                      variant="outline"
+   733→                                      size="icon"
+   734→                                      className="h-9 w-9"
+   735→                                      onClick={() => setQuantity((q) => Math.min(currentStock, q + 1))}
+   736→                                      disabled={quantity >= currentStock}
+   737→                                    >
+   738→                                      <Plus className="h-4 w-4" />
+   739→                                    </Button>
+   740→                                  </div>
+   741→                                  <span className="text-sm font-bold text-kabyle-terracotta ml-auto">
+   742→                                    {formatPrice(itemTotal)}
+   743→                                  </span>
+   744→                                </div>
+   745→                              )}
+   746→                            </div>
+   747→                          )}
+   748→                        </div>
+   749→                      )}
+   750→                    </CardContent>
+   751→                  </Card>
+   752→
+   753→                  {/* ── Section: Livraison ── */}
+   754→                  <Card>
+   755→                    <CardContent className="p-5 space-y-5">
+   756→                      <h2 className="text-lg font-semibold text-kabyle-dark flex items-center gap-2">
+   757→                        <MapPin className="h-5 w-5 text-kabyle-terracotta" />
+   758→                        Informations de livraison
+   759→                      </h2>
+   760→
+   761→                      <div className="grid sm:grid-cols-2 gap-4">
+   762→                        <FormField
+   763→                          control={form.control}
+   764→                          name="name"
+   765→                          render={({ field }) => (
+   766→                            <FormItem>
+   767→                              <FormLabel>Nom complet <span className="text-red-500">*</span></FormLabel>
+   768→                              <FormControl>
+   769→                                <Input placeholder="Votre nom complet" {...field} />
+   770→                              </FormControl>
+   771→                              <FormMessage />
+   772→                            </FormItem>
+   773→                          )}
+   774→                        />
+   775→
+   776→                        <FormField
+   777→                          control={form.control}
+   778→                          name="phone"
+   779→                          render={({ field }) => (
+   780→                            <FormItem>
+   781→                              <FormLabel>
+   782→                                <Phone className="inline h-3 w-3 mr-1" />
+   783→                                Téléphone <span className="text-red-500">*</span>
+   784→                              </FormLabel>
+   785→                              <FormControl>
+   786→                                <Input placeholder="05XXXXXXXX" {...field} />
+   787→                              </FormControl>
+   788→                              <FormMessage />
+   789→                            </FormItem>
+   790→                          )}
+   791→                        />
+   792→                      </div>
+   793→
+   794→                      <div className="grid sm:grid-cols-2 gap-4">
+   795→                        <FormField
+   796→                          control={form.control}
+   797→                          name="wilayaId"
+   798→                          render={({ field }) => (
+   799→                            <FormItem>
+   800→                              <FormLabel>
+   801→                                <MapPin className="inline h-3 w-3 mr-1" />
+   802→                                Wilaya <span className="text-red-500">*</span>
+   803→                              </FormLabel>
+   804→                              <Select onValueChange={(value) => { field.onChange(value); }} value={field.value || undefined}>
+   805→                                <FormControl>
+   806→                                  <SelectTrigger>
+   807→                                    <SelectValue placeholder={loadingWilayas ? "Chargement..." : "Sélectionner une wilaya"} />
+   808→                                  </SelectTrigger>
+   809→                                </FormControl>
+   810→                                <SelectContent className="max-h-60">
+   811→                                  {wilayas.map((w) => (
+   812→                                    <SelectItem key={String(w.code)} value={String(w.code)}>
+   813→                                      {w.code} - {w.name}
+   814→                                    </SelectItem>
+   815→                                  ))}
+   816→                                </SelectContent>
+   817→                              </Select>
+   818→                              <FormMessage />
+   819→                            </FormItem>
+   820→                          )}
+   821→                        />
+   822→
+   823→                        <FormField
+   824→                          control={form.control}
+   825→                          name="communeId"
+   826→                          render={({ field }) => (
+   827→                            <FormItem>
+   828→                              <FormLabel>Commune <span className="text-red-500">*</span></FormLabel>
+   829→                              <Select
+   830→                                onValueChange={field.onChange}
+   831→                                value={field.value || undefined}
+   832→                                disabled={!selectedWilayaId || loadingCommunes}
+   833→                              >
+   834→                                <FormControl>
+   835→                                  <SelectTrigger>
+   836→                                    <SelectValue
+   837→                                      placeholder={
+   838→                                        loadingCommunes
+   839→                                          ? "Chargement des communes..."
+   840→                                          : !selectedWilayaId
+   841→                                          ? "Choisissez d'abord une wilaya"
+   842→                                          : "Sélectionner une commune"
+   843→                                      }
+   844→                                    />
+   845→                                  </SelectTrigger>
+   846→                                </FormControl>
+   847→                                <SelectContent className="max-h-60">
+   848→                                  {filteredCommunes.map((c) => (
+   849→                                    <SelectItem key={`${c.name}-${c.codePostal}`} value={c.name}>
+   850→                                      <div className="flex items-center gap-2">
+   851→                                        <span>{c.name}</span>
+   852→                                        {deliveryType === "home" && c.hasStopDesk && (
+   853→                                          <Badge variant="outline" className="text-[10px] py-0 px-1 border-green-300 text-green-700 bg-green-50">
+   854→                                            Stop Desk
+   855→                                          </Badge>
+   856→                                        )}
+   857→                                      </div>
+   858→                                    </SelectItem>
+   859→                                  ))}
+   860→                                  {filteredCommunes.length === 0 && communes.length > 0 && deliveryType === "stopdesk" && (
+   861→                                    <div className="px-2 py-3 text-sm text-muted-foreground text-center">
+   862→                                      Aucun Stop Desk disponible dans cette wilaya
+   863→                                    </div>
+   864→                                  )}
+   865→                                </SelectContent>
+   866→                              </Select>
+   867→                              <FormMessage />
+   868→                            </FormItem>
+   869→                          )}
+   870→                        />
+   871→                      </div>
+   872→
+   873→                      <FormField
+   874→                        control={form.control}
+   875→                        name="address"
+   876→                        render={({ field }) => (
+   877→                          <FormItem>
+   878→                            <FormLabel>Adresse complète <span className="text-red-500">*</span></FormLabel>
+   879→                            <FormControl>
+   880→                              <Textarea placeholder="Numéro, rue, quartier..." rows={2} {...field} />
+   881→                            </FormControl>
+   882→                            <FormMessage />
+   883→                          </FormItem>
+   884→                        )}
+   885→                      />
+   886→
+   887→                      <FormField
+   888→                        control={form.control}
+   889→                        name="notes"
+   890→                        render={({ field }) => (
+   891→                          <FormItem>
+   892→                            <FormLabel>Notes (optionnel)</FormLabel>
+   893→                            <FormControl>
+   894→                              <Textarea placeholder="Instructions spéciales pour la livraison..." rows={2} {...field} />
+   895→                            </FormControl>
+   896→                            <FormMessage />
+   897→                          </FormItem>
+   898→                        )}
+   899→                      />
+   900→
+   901→                      {/* Delivery type selector */}
+   902→                      {selectedWilayaId && (
+   903→                        <div className="space-y-3">
+   904→                          <Label className="text-sm font-semibold text-kabyle-dark">
+   905→                            Type de livraison <span className="text-red-500">*</span>
+   906→                          </Label>
+   907→                          <div className="grid grid-cols-2 gap-3">
+   908→                            <button
+   909→                              type="button"
+   910→                              onClick={() => setDeliveryType("home")}
+   911→                              className={cn(
+   912→                                "flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all",
+   913→                                deliveryType === "home"
+   914→                                  ? "border-kabyle-terracotta bg-kabyle-cream"
+   915→                                  : "border-transparent bg-muted hover:bg-kabyle-cream/50"
+   916→                              )}
+   917→                            >
+   918→                              <Home className={cn(
+   919→                                "h-5 w-5 shrink-0",
+   920→                                deliveryType === "home" ? "text-kabyle-terracotta" : "text-muted-foreground"
+   921→                              )} />
+   922→                              <div>
+   923→                                <p className={cn(
+   924→                                  "text-sm font-medium",
+   925→                                  deliveryType === "home" ? "text-kabyle-dark" : "text-muted-foreground"
+   926→                                )}>
+   927→                                  Livraison à domicile
+   928→                                </p>
+   929→                                {shippingRates && (
+   930→                                  <p className="text-xs text-muted-foreground">
+   931→                                    {formatPrice(shippingRates.home)}
+   932→                                  </p>
+   933→                                )}
+   934→                              </div>
+   935→                            </button>
+   936→                            <button
+   937→                              type="button"
+   938→                              onClick={() => {
+   939→                                if (communes.length > 0 && !hasStopDeskInWilaya) {
+   940→                                  toast.error("Aucun Stop Desk disponible dans cette wilaya");
+   941→                                  return;
+   942→                                }
+   943→                                setDeliveryType("stopdesk");
+   944→                              }}
+   945→                              disabled={communes.length > 0 && !hasStopDeskInWilaya}
+   946→                              className={cn(
+   947→                                "flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all",
+   948→                                deliveryType === "stopdesk"
+   949→                                  ? "border-kabyle-terracotta bg-kabyle-cream"
+   950→                                  : communes.length > 0 && !hasStopDeskInWilaya
+   951→                                  ? "border-transparent bg-muted/50 opacity-50 cursor-not-allowed"
+   952→                                  : "border-transparent bg-muted hover:bg-kabyle-cream/50"
+   953→                              )}
+   954→                            >
+   955→                              <MapPinned className={cn(
+   956→                                "h-5 w-5 shrink-0",
+   957→                                deliveryType === "stopdesk" ? "text-kabyle-terracotta" : "text-muted-foreground"
+   958→                              )} />
+   959→                              <div>
+   960→                                <p className={cn(
+   961→                                  "text-sm font-medium",
+   962→                                  deliveryType === "stopdesk" ? "text-kabyle-dark" : "text-muted-foreground"
+   963→                                )}>
+   964→                                  Stop Desk
+   965→                                </p>
+   966→                                {shippingRates && hasStopDeskInWilaya && (
+   967→                                  <p className="text-xs text-muted-foreground">
+   968→                                    {formatPrice(shippingRates.stopDesk)}
+   969→                                  </p>
+   970→                                )}
+   971→                                {communes.length > 0 && !hasStopDeskInWilaya && (
+   972→                                  <p className="text-xs text-red-500">
+   973→                                    Non disponible
+   974→                                  </p>
+   975→                                )}
+   976→                              </div>
+   977→                            </button>
+   978→                          </div>
+   979→                        </div>
+   980→                      )}
+   981→
+   982→                      {/* Shipping cost */}
+   983→                      {selectedWilayaId && (
+   984→                        <div className="flex items-center justify-between p-3 rounded-lg border border-kabyle-terracotta/20 bg-kabyle-cream/20">
+   985→                          <span className="text-sm text-muted-foreground flex items-center gap-1">
+   986→                            <Package className="h-4 w-4" />
+   987→                            Frais de livraison{deliveryType === "home" ? " (domicile)" : " (Stop Desk)"}
+   988→                          </span>
+   989→                          {loadingShipping ? (
+   990→                            <Loader2 className="h-4 w-4 animate-spin text-kabyle-terracotta" />
+   991→                          ) : shippingCost !== null ? (
+   992→                            <span className="text-sm font-bold text-kabyle-terracotta">{formatPrice(shippingCost)}</span>
+   993→                          ) : (
+   994→                            <span className="text-xs text-muted-foreground">Non disponible</span>
+   995→                          )}
+   996→                        </div>
+   997→                      )}
+   998→                    </CardContent>
+   999→                  </Card>
+  1000→                </div>
+  1001→
+  1002→                {/* ═══════ RIGHT: Order Summary (2 cols) ═══════ */}
+  1003→                <div className="lg:col-span-2">
+  1004→                  <div className="lg:sticky lg:top-20 space-y-4">
+  1005→                    <Card className="border-kabyle-terracotta/20">
+  1006→                      <CardContent className="p-5 space-y-5">
+  1007→                        <h2 className="text-lg font-semibold text-kabyle-dark flex items-center gap-2">
+  1008→                          <User className="h-5 w-5 text-kabyle-terracotta" />
+  1009→                          Résumé de la commande
+  1010→                        </h2>
+  1011→
+  1012→                        {/* Product summary */}
+  1013→                        {selectedProduct ? (
+  1014→                          <div className="flex gap-3 p-3 rounded-lg bg-muted/50">
+  1015→                            <div className="relative h-16 w-14 shrink-0 rounded-lg overflow-hidden bg-muted">
+  1016→                              <Image
+  1017→                                src={selectedProduct.images?.[0]?.url || "/logo.svg"}
+  1018→                                alt={selectedProduct.name}
+  1019→                                fill
+  1020→                                sizes="56px"
+  1021→                                className="object-cover"
+  1022→                              />
+  1023→                            </div>
+  1024→                            <div className="flex-1 min-w-0">
+  1025→                              <p className="text-xs text-muted-foreground font-mono">{selectedProduct.reference}</p>
+  1026→                              <p className="text-sm font-semibold text-kabyle-dark line-clamp-1">{selectedProduct.name}</p>
+  1027→                              <div className="flex items-center gap-2 mt-0.5">
+  1028→                                {selectedSize && <Badge variant="secondary" className="text-xs">{selectedSize}</Badge>}
+  1029→                                {selectedColor && (
+  1030→                                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+  1031→                                    <span className={cn("h-3 w-3 rounded-full", COLOR_MAP[selectedColor] || "bg-gray-400")} />
+  1032→                                    {selectedColor}
+  1033→                                  </span>
+  1034→                                )}
+  1035→                              </div>
+  1036→                            </div>
+  1037→                          </div>
+  1038→                        ) : (
+  1039→                          <div className="text-center py-4 text-muted-foreground text-sm">
+  1040→                            <ShoppingBag className="h-8 w-8 mx-auto mb-2 opacity-30" />
+  1041→                            Sélectionnez un produit pour commencer
+  1042→                          </div>
+  1043→                        )}
+  1044→
+  1045→                        {/* Price breakdown */}
+  1046→                        <div className="space-y-2">
+  1047→                          <div className="flex justify-between text-sm">
+  1048→                            <span className="text-muted-foreground">
+  1049→                              Prix unitaire
+  1050→                            </span>
+  1051→                            <span className="font-medium">
+  1052→                              {selectedProduct ? formatPrice(selectedProduct.price) : "—"}
+  1053→                            </span>
+  1054→                          </div>
+  1055→                          <div className="flex justify-between text-sm">
+  1056→                            <span className="text-muted-foreground">
+  1057→                              Quantité
+  1058→                            </span>
+  1059→                            <span className="font-medium">
+  1060→                              {selectedProduct ? quantity : "—"}
+  1061→                            </span>
+  1062→                          </div>
+  1063→                          <div className="flex justify-between text-sm">
+  1064→                            <span className="text-muted-foreground">Sous-total</span>
+  1065→                            <span className="font-medium">
+  1066→                              {selectedProduct ? formatPrice(itemTotal) : "—"}
+  1067→                            </span>
+  1068→                          </div>
+  1069→                          <div className="flex justify-between text-sm">
+  1070→                            <span className="text-muted-foreground flex items-center gap-1">
+  1071→                              <Package className="h-3 w-3" />
+  1072→                              Livraison
+  1073→                            </span>
+  1074→                            <span className="font-medium">
+  1075→                              {shippingCost !== null
+  1076→                                ? formatPrice(shippingCost)
+  1077→                                : selectedWilayaId
+  1078→                                ? "Calcul..."
+  1079→                                : "Selon wilaya"}
+  1080→                            </span>
+  1081→                          </div>
+  1082→                          <Separator />
+  1083→                          <div className="flex justify-between text-lg font-bold pt-1">
+  1084→                            <span className="text-kabyle-dark">Total</span>
+  1085→                            <span className="text-kabyle-terracotta">
+  1086→                              {selectedProduct ? formatPrice(totalWithShipping) : "—"}
+  1087→                            </span>
+  1088→                          </div>
+  1089→                        </div>
+  1090→
+  1091→                        {/* Submit button */}
+  1092→                        <Button
+  1093→                          type="submit"
+  1094→                          size="lg"
+  1095→                          className="w-full bg-kabyle-terracotta hover:bg-kabyle-red text-white text-base py-6"
+  1096→                          disabled={
+  1097→                            submitting ||
+  1098→                            !selectedProductId ||
+  1099→                            !selectedSize ||
+  1100→                            !selectedColor ||
+  1101→                            currentStock === 0
+  1102→                          }
+  1103→                        >
+  1104→                          {submitting ? (
+  1105→                            <>
+  1106→                              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+  1107→                              Envoi en cours...
+  1108→                            </>
+  1109→                          ) : (
+  1110→                            <>
+  1111→                              <ShoppingBag className="mr-2 h-5 w-5" />
+  1112→                              Confirmer la commande
+  1113→                            </>
+  1114→                          )}
+  1115→                        </Button>
+  1116→
+  1117→                        {/* Validation hints */}
+  1118→                        {(!selectedProductId || !selectedSize || !selectedColor) && (
+  1119→                          <div className="space-y-1">
+  1120→                            {!selectedProductId && (
+  1121→                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+  1122→                                <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
+  1123→                                Choisissez un produit
+  1124→                              </p>
+  1125→                            )}
+  1126→                            {selectedProductId && !selectedSize && (
+  1127→                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+  1128→                                <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
+  1129→                                Choisissez une taille
+  1130→                              </p>
+  1131→                            )}
+  1132→                            {selectedProductId && selectedSize && !selectedColor && (
+  1133→                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+  1134→                                <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
+  1135→                                Choisissez une couleur
+  1136→                              </p>
+  1137→                            )}
+  1138→                          </div>
+  1139→                        )}
+  1140→                      </CardContent>
+  1141→                    </Card>
+  1142→
+  1143→                    {/* Trust badges */}
+  1144→                    <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+  1145→                      <span className="flex items-center gap-1">
+  1146→                        <Package className="h-3 w-3" />
+  1147→                        Livraison <a href="https://fret.direct" target="_blank" rel="noopener noreferrer" className="hover:underline font-medium">FRET.DIRECT</a>
+  1148→                      </span>
+  1149→                      <span className="flex items-center gap-1">
+  1150→                        <Check className="h-3 w-3" />
+  1151→                        Paiement à la livraison
+  1152→                      </span>
+  1153→                    </div>
+  1154→                  </div>
+  1155→                </div>
+  1156→
+  1157→              </div>
+  1158→            </form>
+  1159→          </Form>
+  1160→        </div>
+  1161→      </main>
+  1162→
+  1163→      <Footer />
+  1164→    </div>
+  1165→  );
+  1166→}
+  1167→
+  1168→export default function OrderPage() {
+  1169→  return (
+  1170→    <Suspense
+  1171→      fallback={
+  1172→        <div className="min-h-screen flex items-center justify-center">
+  1173→          <Loader2 className="h-8 w-8 animate-spin text-kabyle-terracotta" />
+  1174→        </div>
+  1175→      }
+  1176→    >
+  1177→      <OrderFormContent />
+  1178→    </Suspense>
+  1179→  );
+  1180→}
+  1181→
