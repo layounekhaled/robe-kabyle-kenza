@@ -6,19 +6,9 @@ import { usePathname } from "next/navigation";
 import Image from "next/image";
 import {
   Menu,
-  X,
   ShoppingBag,
-  ChevronDown,
-  LayoutDashboard,
-  MonitorSpeaker,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
@@ -79,34 +69,6 @@ export default function Navbar() {
 
           {/* Right side */}
           <div className="flex items-center gap-2">
-            {/* Admin Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="hidden sm:flex text-muted-foreground hover:text-kabyle-dark"
-                >
-                  <span className="text-xs">Espace Pro</span>
-                  <ChevronDown className="ml-1 h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href="/admin" className="flex items-center gap-2">
-                    <LayoutDashboard className="h-4 w-4" />
-                    Administration
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/pos" className="flex items-center gap-2">
-                    <MonitorSpeaker className="h-4 w-4" />
-                    Point de Vente
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             {/* Shopping Bag */}
             <Link href="/order">
               <Button
@@ -148,23 +110,7 @@ export default function Navbar() {
                       {link.label}
                     </Link>
                   ))}
-                  <div className="my-2 border-t" />
-                  <Link
-                    href="/admin"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 px-4 py-3 rounded-md text-sm text-muted-foreground hover:text-kabyle-dark hover:bg-muted"
-                  >
-                    <LayoutDashboard className="h-4 w-4" />
-                    Administration
-                  </Link>
-                  <Link
-                    href="/pos"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 px-4 py-3 rounded-md text-sm text-muted-foreground hover:text-kabyle-dark hover:bg-muted"
-                  >
-                    <MonitorSpeaker className="h-4 w-4" />
-                    Point de Vente
-                  </Link>
+
                 </nav>
               </SheetContent>
             </Sheet>
