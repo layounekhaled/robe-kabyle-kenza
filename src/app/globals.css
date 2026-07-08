@@ -47,6 +47,7 @@
   --color-kabyle-red: var(--kabyle-red);
   --color-kabyle-cream: var(--kabyle-cream);
   --color-kabyle-dark: var(--kabyle-dark);
+  --color-kabyle-indigo: var(--kabyle-indigo);
 }
 
 :root {
@@ -88,6 +89,7 @@
   --kabyle-red: oklch(0.5 0.2 15);
   --kabyle-cream: oklch(0.95 0.02 80);
   --kabyle-dark: oklch(0.25 0.03 30);
+  --kabyle-indigo: oklch(0.45 0.12 280);
 }
 
 .dark {
@@ -128,6 +130,7 @@
   --kabyle-red: oklch(0.6 0.2 15);
   --kabyle-cream: oklch(0.85 0.03 80);
   --kabyle-dark: oklch(0.95 0.01 80);
+  --kabyle-indigo: oklch(0.55 0.12 280);
 }
 
 @layer base {
@@ -139,46 +142,261 @@
   }
 }
 
-/* Berber pattern decorative borders */
+/* ═══════════════════════════════════════════════════════════════
+   BERBER & KABYLE DECORATIVE PATTERNS
+   Inspired by traditional Amazigh textile motifs:
+   - Diamond/rhombus shapes (⬦) representing the "eye" motif
+   - Triangular patterns from kabyle jewelry
+   - Geometric zigzag patterns from woven textiles
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Rich berber border - top */
 .berber-border-top {
-  border-top: 4px solid;
+  border-top: 5px solid;
   border-image: repeating-linear-gradient(
     90deg,
     oklch(0.55 0.15 25) 0px,
-    oklch(0.55 0.15 25) 8px,
-    oklch(0.8 0.1 75) 8px,
+    oklch(0.55 0.15 25) 6px,
+    oklch(0.45 0.12 280) 6px,
+    oklch(0.45 0.12 280) 10px,
+    oklch(0.8 0.1 75) 10px,
     oklch(0.8 0.1 75) 16px,
     oklch(0.5 0.12 140) 16px,
-    oklch(0.5 0.12 140) 24px,
+    oklch(0.5 0.12 140) 20px,
+    oklch(0.5 0.2 15) 20px,
     oklch(0.5 0.2 15) 24px,
-    oklch(0.5 0.2 15) 32px
-  ) 4;
+    oklch(0.8 0.1 75) 24px,
+    oklch(0.8 0.1 75) 30px
+  ) 5;
 }
 
+/* Rich berber border - bottom */
 .berber-border-bottom {
-  border-bottom: 4px solid;
+  border-bottom: 5px solid;
   border-image: repeating-linear-gradient(
     90deg,
     oklch(0.55 0.15 25) 0px,
-    oklch(0.55 0.15 25) 8px,
-    oklch(0.8 0.1 75) 8px,
+    oklch(0.55 0.15 25) 6px,
+    oklch(0.45 0.12 280) 6px,
+    oklch(0.45 0.12 280) 10px,
+    oklch(0.8 0.1 75) 10px,
     oklch(0.8 0.1 75) 16px,
     oklch(0.5 0.12 140) 16px,
-    oklch(0.5 0.12 140) 24px,
+    oklch(0.5 0.12 140) 20px,
+    oklch(0.5 0.2 15) 20px,
     oklch(0.5 0.2 15) 24px,
-    oklch(0.5 0.2 15) 32px
-  ) 4;
+    oklch(0.8 0.1 75) 24px,
+    oklch(0.8 0.1 75) 30px
+  ) 5;
 }
 
-/* Kabyle pattern background */
+/* Fine berber border for cards and subtle elements */
+.berber-border-fine {
+  border: 2px solid;
+  border-image: repeating-linear-gradient(
+    90deg,
+    oklch(0.55 0.15 25) 0px,
+    oklch(0.55 0.15 25) 4px,
+    oklch(0.8 0.1 75) 4px,
+    oklch(0.8 0.1 75) 8px,
+    oklch(0.45 0.12 280) 8px,
+    oklch(0.45 0.12 280) 12px
+  ) 2;
+}
+
+/* Kabyle diamond pattern background - subtle */
 .kabyle-pattern {
-  background-image: 
-    radial-gradient(circle at 25% 25%, oklch(0.8 0.1 75 / 0.1) 1px, transparent 1px),
-    radial-gradient(circle at 75% 75%, oklch(0.55 0.15 25 / 0.08) 1px, transparent 1px);
-  background-size: 20px 20px;
+  background-image:
+    radial-gradient(circle at 25% 25%, oklch(0.8 0.1 75 / 0.08) 1.5px, transparent 1.5px),
+    radial-gradient(circle at 75% 75%, oklch(0.55 0.15 25 / 0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
-/* Custom scrollbar */
+/* Rich kabyle diamond pattern - for hero and featured sections */
+.kabyle-pattern-rich {
+  background-image:
+    radial-gradient(circle at 20% 30%, oklch(0.8 0.1 75 / 0.12) 2px, transparent 2px),
+    radial-gradient(circle at 80% 70%, oklch(0.55 0.15 25 / 0.08) 1.5px, transparent 1.5px),
+    radial-gradient(circle at 50% 50%, oklch(0.45 0.12 280 / 0.05) 1px, transparent 1px),
+    linear-gradient(45deg, oklch(0.55 0.15 25 / 0.03) 25%, transparent 25%, transparent 75%, oklch(0.55 0.15 25 / 0.03) 75%),
+    linear-gradient(-45deg, oklch(0.55 0.15 25 / 0.03) 25%, transparent 25%, transparent 75%, oklch(0.55 0.15 25 / 0.03) 75%);
+  background-size: 24px 24px, 24px 24px, 12px 12px, 60px 60px, 60px 60px;
+}
+
+/* Kabyle weave pattern - for dark sections */
+.kabyle-pattern-dark {
+  background-image:
+    radial-gradient(circle at 30% 40%, oklch(0.8 0.1 75 / 0.1) 1.5px, transparent 1.5px),
+    radial-gradient(circle at 70% 60%, oklch(0.55 0.15 25 / 0.08) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, oklch(0.7 0.15 25 / 0.04) 2px, transparent 2px);
+  background-size: 20px 20px, 20px 20px, 40px 40px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ORNAMENTAL DIVIDER - Diamond chain pattern
+   ═══════════════════════════════════════════════════════════════ */
+.kabyle-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+.kabyle-divider::before,
+.kabyle-divider::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    oklch(0.55 0.15 25) 0px,
+    oklch(0.55 0.15 25) 8px,
+    transparent 8px,
+    transparent 16px,
+    oklch(0.8 0.1 75) 16px,
+    oklch(0.8 0.1 75) 24px,
+    transparent 24px,
+    transparent 32px
+  );
+}
+.kabyle-divider-diamond {
+  width: 12px;
+  height: 12px;
+  background: oklch(0.55 0.15 25);
+  transform: rotate(45deg);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════════════════════ */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer-berber {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+.animate-float-gentle {
+  animation: float-gentle 3s ease-in-out infinite;
+}
+
+.animate-shimmer-berber {
+  background-size: 200% auto;
+  animation: shimmer-berber 3s linear infinite;
+}
+
+/* Stagger children animations */
+.stagger-children > *:nth-child(1) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.3s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.4s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.5s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.6s; }
+
+/* ═══════════════════════════════════════════════════════════════
+   PRODUCT CARD CRAFT EFFECTS
+   ═══════════════════════════════════════════════════════════════ */
+.craft-card {
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.craft-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    oklch(0.55 0.15 25 / 0) 0px,
+    oklch(0.55 0.15 25 / 0.3) 2px,
+    oklch(0.55 0.15 25 / 0) 4px,
+    oklch(0.8 0.1 75 / 0) 8px,
+    oklch(0.8 0.1 75 / 0.2) 10px,
+    oklch(0.8 0.1 75 / 0) 12px
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.craft-card:hover::before {
+  opacity: 1;
+}
+.craft-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 10px 30px -5px oklch(0.55 0.15 25 / 0.15),
+    0 4px 6px -4px oklch(0 0 0 / 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUTTON CRAFT EFFECTS
+   ═══════════════════════════════════════════════════════════════ */
+.btn-craft {
+  position: relative;
+  overflow: hidden;
+}
+.btn-craft::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    oklch(1 0 0 / 0.2),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+.btn-craft:hover::after {
+  left: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ORNAMENTAL SECTION HEADERS
+   ═══════════════════════════════════════════════════════════════ */
+.section-ornament {
+  position: relative;
+  display: inline-block;
+}
+.section-ornament::before,
+.section-ornament::after {
+  content: '◆';
+  color: oklch(0.8 0.1 75);
+  font-size: 0.5em;
+  vertical-align: middle;
+  margin: 0 12px;
+  opacity: 0.6;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CUSTOM SCROLLBAR - Berber colored
+   ═══════════════════════════════════════════════════════════════ */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
@@ -187,9 +405,76 @@
   border-radius: 3px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: oklch(0.55 0.15 25 / 0.3);
+  background: linear-gradient(180deg, oklch(0.55 0.15 25 / 0.3), oklch(0.8 0.1 75 / 0.3));
   border-radius: 3px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.55 0.15 25 / 0.5);
+  background: linear-gradient(180deg, oklch(0.55 0.15 25 / 0.5), oklch(0.8 0.1 75 / 0.5));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FANCY IMAGE FRAME - Kabyle jewelry-inspired
+   ═══════════════════════════════════════════════════════════════ */
+.kabyle-frame {
+  position: relative;
+}
+.kabyle-frame::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 3px solid oklch(0.8 0.1 75 / 0.3);
+  border-radius: inherit;
+  pointer-events: none;
+}
+.kabyle-frame::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border: 1px dashed oklch(0.55 0.15 25 / 0.2);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GOLDEN SHIMMER TEXT EFFECT
+   ═══════════════════════════════════════════════════════════════ */
+.text-shimmer-gold {
+  background: linear-gradient(
+    120deg,
+    oklch(0.8 0.1 75) 0%,
+    oklch(0.85 0.15 80) 25%,
+    oklch(0.9 0.1 90) 50%,
+    oklch(0.85 0.15 80) 75%,
+    oklch(0.8 0.1 75) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-berber 4s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FEATURED BADGE - Kabyle fiber inspired
+   ═══════════════════════════════════════════════════════════════ */
+.badge-artisan {
+  position: relative;
+  overflow: hidden;
+}
+.badge-artisan::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    oklch(0.55 0.15 25) 0px,
+    oklch(0.55 0.15 25) 3px,
+    oklch(0.8 0.1 75) 3px,
+    oklch(0.8 0.1 75) 6px,
+    oklch(0.45 0.12 280) 6px,
+    oklch(0.45 0.12 280) 9px
+  );
 }
