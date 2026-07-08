@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { uploadImage, validateImageFile, deleteImage, isSupabaseUrl, UploadResult } from "@/lib/supabase-storage";
 import { isSupabaseConfigured, isSupabaseAdminConfigured } from "@/lib/supabase";
+import { uploadToLocal } from "@/lib/local-upload";
 
 interface ImageUploadResult extends UploadResult {
   name?: string;
@@ -11,7 +12,10 @@ interface ImageUploadResult extends UploadResult {
 }
 
 /**
- * POST /api/images - Upload image(s) to Supabase Storage
+ * POST /api/images - Upload image(s) to Supabase Storage or local filesystem
+ * 
+ * When Supabase is not configured, falls back to local file storage
+ * in /public/uploads/ directory.
  * 
  * Accepts FormData with:
  * - file: Single file upload
@@ -27,19 +31,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    // Check if Supabase is configured (admin key required for writes)
-    if (!isSupabaseAdminConfigured()) {
-      return NextResponse.json(
-        { error: "Supabase admin n'est pas configuré. Vérifiez SUPABASE_SERVICE_ROLE_KEY." },
-        { status: 503 }
-      );
-    }
-    if (!isSupabaseConfigured()) {
-      return NextResponse.json(
-        { error: "Supabase n'est pas configuré. Vérifiez les variables d'environnement NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY." },
-        { status: 503 }
-      );
-    }
+    const supabaseReady = isSupabaseConfigured() && isSupabaseAdminConfigured();
 
     const formData = await request.formData();
 
@@ -82,14 +74,25 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Upload to Supabase
-      const result = await uploadImage(file);
-      results.push({
-        ...result,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-      });
+      if (supabaseReady) {
+        // Upload to Supabase
+        const result = await uploadImage(file);
+        results.push({
+          ...result,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        });
+      } else {
+        // Fallback: upload to local filesystem
+        const result = await uploadToLocal(file);
+        results.push({
+          ...result,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        });
+      }
     }
 
     // Single file upload — return single result
@@ -122,7 +125,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * DELETE /api/images - Delete an image from Supabase Storage
+ * DELETE /api/images - Delete an image from Supabase Storage or local filesystem
  * 
  * Body: { url: string }
  * Returns: { success: boolean }
