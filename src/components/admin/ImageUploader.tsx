@@ -32,7 +32,7 @@ export interface ImageItem {
 
 interface ImageUploaderProps {
   images: ImageItem[];
-  onImagesChange: (images: ImageItem[]) => void;
+  onImagesChange: (images: ImageItem[] | ((prev: ImageItem[]) => ImageItem[])) => void;
   maxFiles?: number;
   disabled?: boolean;
 }
@@ -58,15 +58,16 @@ export default function ImageUploader({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragItemRef = useRef<number | null>(null);
 
-  // ── Upload files to Supabase via API ──
+  // ── Upload a single file to /api/images ──
+  // Uses FUNCTIONAL state update (prev => ...) to avoid stale closure over `images`
 
   const uploadFile = useCallback(
     async (file: File, localId: string) => {
-      // Validate
+      // Client-side validation
       const validation = validateImageFile(file);
       if (!validation.valid) {
-        onImagesChange(
-          images.map((img) =>
+        onImagesChange((prev: ImageItem[]) =>
+          prev.map((img) =>
             img.id === localId
               ? { ...img, isUploading: false, uploadError: validation.error }
               : img
@@ -85,15 +86,15 @@ export default function ImageUploader({
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Erreur d'upload");
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Erreur serveur (${response.status})`);
         }
 
         const data = await response.json();
 
-        // Replace the temporary image item with the uploaded URL
-        onImagesChange(
-          images.map((img) =>
+        // Replace the temporary blob URL with the real uploaded URL
+        onImagesChange((prev: ImageItem[]) =>
+          prev.map((img) =>
             img.id === localId
               ? {
                   ...img,
@@ -106,8 +107,8 @@ export default function ImageUploader({
           )
         );
       } catch (err) {
-        onImagesChange(
-          images.map((img) =>
+        onImagesChange((prev: ImageItem[]) =>
+          prev.map((img) =>
             img.id === localId
               ? {
                   ...img,
@@ -120,10 +121,10 @@ export default function ImageUploader({
         );
       }
     },
-    [images, onImagesChange]
+    [onImagesChange] // ← NO `images` dependency — avoids stale closure
   );
 
-  // ── Handle file selection ──
+  // ── Handle file selection / drop ──
 
   const handleFiles = useCallback(
     (files: FileList | File[]) => {
@@ -152,10 +153,10 @@ export default function ImageUploader({
         };
       });
 
-      const updatedImages = [...images, ...newImages];
-      onImagesChange(updatedImages);
+      // Add new images to state
+      onImagesChange([...images, ...newImages]);
 
-      // Start uploading each file
+      // Start uploading each file (uploadFile uses functional updates, so no stale closure)
       newImages.forEach((img) => {
         if (img.file) {
           uploadFile(img.file, img.id);
@@ -251,7 +252,7 @@ export default function ImageUploader({
     (id: string) => {
       const imageToRemove = images.find((img) => img.id === id);
       if (imageToRemove?.url && !imageToRemove.isUploading) {
-        // Delete from Supabase Storage if it's an uploaded image
+        // Delete from storage if it's an uploaded image
         fetch("/api/images", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
@@ -309,8 +310,8 @@ export default function ImageUploader({
     (id: string) => {
       const image = images.find((img) => img.id === id);
       if (image?.file) {
-        onImagesChange(
-          images.map((img) =>
+        onImagesChange((prev: ImageItem[]) =>
+          prev.map((img) =>
             img.id === id
               ? { ...img, isUploading: true, uploadProgress: 0, uploadError: undefined }
               : img
