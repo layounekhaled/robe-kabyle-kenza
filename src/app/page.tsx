@@ -16,6 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/store/Navbar";
 import Footer from "@/components/store/Footer";
 import ProductCard from "@/components/store/ProductCard";
+import HeroCarousel from "@/components/store/HeroCarousel";
 import { db, ensureSchema } from "@/lib/db";
 
 // Force dynamic rendering so DB is queried at request time, not at build time
@@ -73,6 +74,23 @@ export default async function HomePage() {
     }));
   } catch (error) {
     console.error("Failed to fetch featured products:", error);
+  }
+
+  // Fetch hero slides from database
+  type HeroSlide = {
+    id: string; imageUrl: string; alt: string;
+    sortOrder: number; active: boolean;
+  };
+  let heroSlides: HeroSlide[] = [];
+
+  try {
+    const slideData = await db.heroSlide.findMany({
+      where: { active: true },
+      orderBy: { sortOrder: "asc" },
+    });
+    heroSlides = slideData;
+  } catch (error) {
+    console.error("Failed to fetch hero slides:", error);
   }
 
   try {
@@ -173,26 +191,17 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              {/* Hero Image */}
+              {/* Hero Image - Auto-sliding Carousel */}
               <div className="relative hidden lg:block animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
                 <div className="relative aspect-[3/4] max-w-md mx-auto">
                   {/* Decorative frame layers */}
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-kabyle-terracotta/20 to-kabyle-gold/20 rotate-3 scale-[1.03] transition-transform duration-700 group-hover:rotate-1" />
                   <div className="absolute -inset-3 rounded-3xl border-2 border-dashed border-kabyle-gold/25 rotate-1" />
                   <div className="absolute -inset-6 rounded-[2rem] border border-kabyle-terracotta/10 rotate-[-0.5deg]" />
-                  <div className="relative h-full w-full rounded-2xl overflow-hidden shadow-2xl border border-white/50 image-reveal">
-                    <Image
-                      src="/kabyle-banner.png"
-                      alt="Robe Kabyle - Nouvelle collection"
-                      fill
-                      sizes="50vw"
-                      className="object-cover transition-transform duration-700 hover:scale-105"
-                      priority
-                    />
-                    {/* Overlay gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-kabyle-dark/30 via-kabyle-dark/5 to-transparent" />
-                    <div className="absolute inset-0 bg-gradient-to-br from-kabyle-gold/5 via-transparent to-kabyle-terracotta/5" />
-                  </div>
+                  <HeroCarousel
+                    slides={heroSlides}
+                    fallbackImage="/kabyle-banner.png"
+                  />
                   {/* Floating decorative diamonds */}
                   <div className="absolute -bottom-4 -right-4 w-10 h-10 bg-gradient-to-br from-kabyle-gold/40 to-kabyle-gold/20 rotate-45 rounded-sm animate-float-gentle" style={{ animationDelay: '1s' }} />
                   <div className="absolute -top-4 -left-4 w-8 h-8 bg-gradient-to-br from-kabyle-terracotta/40 to-kabyle-terracotta/20 rotate-45 rounded-sm animate-float-gentle" style={{ animationDelay: '2s' }} />
