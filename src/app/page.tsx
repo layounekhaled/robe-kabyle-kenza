@@ -191,22 +191,22 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              {/* Hero Image - Auto-sliding Carousel */}
-              <div className="relative hidden lg:block animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-                <div className="relative aspect-[3/4] max-w-md mx-auto">
-                  {/* Decorative frame layers */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-kabyle-terracotta/20 to-kabyle-gold/20 rotate-3 scale-[1.03] transition-transform duration-700 group-hover:rotate-1" />
-                  <div className="absolute -inset-3 rounded-3xl border-2 border-dashed border-kabyle-gold/25 rotate-1" />
-                  <div className="absolute -inset-6 rounded-[2rem] border border-kabyle-terracotta/10 rotate-[-0.5deg]" />
+              {/* Hero Image - Auto-sliding Carousel (visible on all screens) */}
+              <div className="relative animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                <div className="relative aspect-[3/4] max-w-md mx-auto lg:mx-0">
+                  {/* Decorative frame layers - hidden on mobile for cleaner look */}
+                  <div className="hidden lg:block absolute inset-0 rounded-2xl bg-gradient-to-br from-kabyle-terracotta/20 to-kabyle-gold/20 rotate-3 scale-[1.03] transition-transform duration-700 group-hover:rotate-1" />
+                  <div className="hidden lg:block absolute -inset-3 rounded-3xl border-2 border-dashed border-kabyle-gold/25 rotate-1" />
+                  <div className="hidden lg:block absolute -inset-6 rounded-[2rem] border border-kabyle-terracotta/10 rotate-[-0.5deg]" />
                   <HeroCarousel
                     slides={heroSlides}
                     fallbackImage="/kabyle-banner.png"
                   />
-                  {/* Floating decorative diamonds */}
-                  <div className="absolute -bottom-4 -right-4 w-10 h-10 bg-gradient-to-br from-kabyle-gold/40 to-kabyle-gold/20 rotate-45 rounded-sm animate-float-gentle" style={{ animationDelay: '1s' }} />
-                  <div className="absolute -top-4 -left-4 w-8 h-8 bg-gradient-to-br from-kabyle-terracotta/40 to-kabyle-terracotta/20 rotate-45 rounded-sm animate-float-gentle" style={{ animationDelay: '2s' }} />
-                  <div className="absolute top-1/4 -right-7 w-5 h-5 bg-kabyle-indigo/25 rotate-45 rounded-sm animate-float-gentle" style={{ animationDelay: '3s' }} />
-                  <div className="absolute bottom-1/4 -left-5 w-3 h-3 bg-kabyle-copper/30 rotate-45 rounded-sm animate-float-gentle" style={{ animationDelay: '0.5s' }} />
+                  {/* Floating decorative diamonds - hidden on mobile */}
+                  <div className="hidden lg:block absolute -bottom-4 -right-4 w-10 h-10 bg-gradient-to-br from-kabyle-gold/40 to-kabyle-gold/20 rotate-45 rounded-sm animate-float-gentle" style={{ animationDelay: '1s' }} />
+                  <div className="hidden lg:block absolute -top-4 -left-4 w-8 h-8 bg-gradient-to-br from-kabyle-terracotta/40 to-kabyle-terracotta/20 rotate-45 rounded-sm animate-float-gentle" style={{ animationDelay: '2s' }} />
+                  <div className="hidden lg:block absolute top-1/4 -right-7 w-5 h-5 bg-kabyle-indigo/25 rotate-45 rounded-sm animate-float-gentle" style={{ animationDelay: '3s' }} />
+                  <div className="hidden lg:block absolute bottom-1/4 -left-5 w-3 h-3 bg-kabyle-copper/30 rotate-45 rounded-sm animate-float-gentle" style={{ animationDelay: '0.5s' }} />
                 </div>
               </div>
             </div>
