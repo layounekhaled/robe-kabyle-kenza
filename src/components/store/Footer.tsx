@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin, Phone, Facebook, Instagram, Mail, Heart } from "lucide-react";
+import { MapPin, Phone, Facebook, Instagram, Mail } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -156,9 +156,7 @@ export default function Footer() {
             © {new Date().getFullYear()} Robe Kabyle Kenza. Tous droits réservés.
           </p>
           <p className="text-xs text-white/30 flex items-center gap-1">
-            Développé avec{" "}
-            <Heart className="h-3 w-3 text-kabyle-terracotta/60 fill-kabyle-terracotta/40" />{" "}
-            par{" "}
+            Développé par{" "}
             <a href="https://fret.direct" target="_blank" rel="noopener noreferrer" className="text-kabyle-gold/60 hover:text-kabyle-gold transition-colors font-medium">
               FRET.DIRECT
             </a>
