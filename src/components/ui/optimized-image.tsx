@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image, { ImageProps } from "next/image";
 import { cn } from "@/lib/utils";
 import { getThumbnailUrl, getOptimizedUrl, isSupabaseUrl } from "@/lib/supabase-storage";
@@ -75,6 +75,21 @@ export default function OptimizedImage({
   });
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+
+  // Sync imgSrc when the src prop changes (e.g. switching images in a carousel)
+  useEffect(() => {
+    let newSrc: string;
+    if (typeof src === "string" && useThumbnail && isSupabaseUrl(src)) {
+      newSrc = getThumbnailUrl(src);
+    } else if (typeof src === "string" && quality && isSupabaseUrl(src)) {
+      newSrc = getOptimizedUrl(src, { quality });
+    } else {
+      newSrc = src as string;
+    }
+    setImgSrc(newSrc);
+    setIsLoading(true);
+    setHasError(false);
+  }, [src, useThumbnail, quality]);
 
   const handleError = () => {
     if (!hasError) {

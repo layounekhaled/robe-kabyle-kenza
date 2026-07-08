@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
-} from "@/components/ui/carousel";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 import OptimizedImage from "@/components/ui/optimized-image";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +24,18 @@ export default function ImageCarousel({
 
   const handleSelect = useCallback((index: number) => {
     setSelectedIndex(index);
+    setIsZoomed(false);
   }, []);
+
+  const goToPrev = useCallback(() => {
+    setSelectedIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+    setIsZoomed(false);
+  }, [images.length]);
+
+  const goToNext = useCallback(() => {
+    setSelectedIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+    setIsZoomed(false);
+  }, [images.length]);
 
   if (images.length === 0) {
     return (
@@ -50,8 +55,7 @@ export default function ImageCarousel({
     <div className="space-y-3">
       {/* Main Image */}
       <div
-        className="relative aspect-[3/4] rounded-xl overflow-hidden bg-muted cursor-zoom-in"
-        onClick={() => setIsZoomed(!isZoomed)}
+        className="relative aspect-[3/4] rounded-xl overflow-hidden bg-muted group"
       >
         <OptimizedImage
           src={images[selectedIndex].url}
@@ -64,6 +68,44 @@ export default function ImageCarousel({
           )}
           fallbackSrc="/logo-kabyle.png"
         />
+
+        {/* Zoom button */}
+        <button
+          onClick={() => setIsZoomed(!isZoomed)}
+          className="absolute top-3 right-3 z-10 rounded-full bg-black/40 p-2 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60"
+          title={isZoomed ? "Réduire" : "Agrandir"}
+        >
+          {isZoomed ? <ZoomOut className="h-4 w-4" /> : <ZoomIn className="h-4 w-4" />}
+        </button>
+
+        {/* Previous arrow — only show if multiple images */}
+        {images.length > 1 && (
+          <button
+            onClick={goToPrev}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 rounded-full bg-black/40 p-2 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60"
+            title="Image précédente"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+        )}
+
+        {/* Next arrow — only show if multiple images */}
+        {images.length > 1 && (
+          <button
+            onClick={goToNext}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 rounded-full bg-black/40 p-2 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60"
+            title="Image suivante"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        )}
+
+        {/* Image counter */}
+        {images.length > 1 && (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 rounded-full bg-black/40 px-3 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
+            {selectedIndex + 1} / {images.length}
+          </div>
+        )}
       </div>
 
       {/* Thumbnails */}
