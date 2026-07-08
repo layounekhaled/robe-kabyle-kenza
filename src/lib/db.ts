@@ -27,8 +27,22 @@ export async function ensureSchema() {
   }
 
   try {
-    // Check if the Product table exists (quick way to verify schema is applied)
+    // Check if core tables exist - verify both Product AND HeroSlide
+    // HeroSlide is a newer table, so if it's missing we need to push schema
     await db.product.count()
+    try {
+      await db.heroSlide.count()
+    } catch {
+      // HeroSlide table doesn't exist yet - need to push schema
+      console.log('📦 New tables detected - applying schema with prisma db push...')
+      const { execSync } = await import('child_process')
+      execSync('npx prisma db push --skip-generate', {
+        stdio: 'inherit',
+        env: { ...process.env },
+        timeout: 60000,
+      })
+      console.log('✅ Database schema updated successfully')
+    }
     _schemaApplied = true
   } catch (error: unknown) {
     // If the table doesn't exist, we need to push the schema

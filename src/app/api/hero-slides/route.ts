@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db, ensureSchema } from "@/lib/db";
 
 /**
  * GET /api/hero-slides - List all active hero slides (public)
@@ -7,6 +7,8 @@ import { db } from "@/lib/db";
  */
 export async function GET(request: NextRequest) {
   try {
+    await ensureSchema();
+
     const { searchParams } = new URL(request.url);
     const admin = searchParams.get("admin") === "true";
 
@@ -35,6 +37,8 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    await ensureSchema();
+
     const { getServerSession } = await import("next-auth");
     const { authOptions } = await import("@/lib/auth");
     const session = await getServerSession(authOptions);
