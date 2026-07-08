@@ -1,11 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  
   typescript: {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  serverExternalPackages: ["sharp"],
   allowedDevOrigins: [
     "preview-chat-4e9d381b-bcdc-4399-9ce0-d0225d3a8055.space-z.ai",
   ],
