@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -21,17 +21,39 @@ const navLinks = [
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full">
       {/* Berber decorative top border */}
       <div className="berber-border-top" />
-      <div className="bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/85 border-b border-kabyle-terracotta/10">
+      <div
+        className={cn(
+          "transition-all duration-500 border-b",
+          scrolled
+            ? "bg-white/98 backdrop-blur-lg supports-[backdrop-filter]:bg-white/92 border-kabyle-terracotta/15 navbar-scrolled"
+            : "bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/80 border-kabyle-terracotta/5"
+        )}
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-18 items-center justify-between">
+          <div className={cn(
+            "flex items-center justify-between transition-all duration-500",
+            scrolled ? "h-16" : "h-18"
+          )}>
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="relative h-11 w-11 overflow-hidden rounded-lg border-2 border-kabyle-terracotta/20 transition-all group-hover:border-kabyle-terracotta/50 group-hover:scale-105 group-hover:shadow-md">
+              <div className={cn(
+                "relative overflow-hidden rounded-xl border-2 transition-all duration-500 group-hover:border-kabyle-terracotta/60 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-kabyle-terracotta/10",
+                scrolled ? "h-10 w-10 border-kabyle-terracotta/30" : "h-11 w-11 border-kabyle-terracotta/20"
+              )}>
                 <Image
                   src="/logo-kabyle.png"
                   alt="Robe Kabyle Kenza"
@@ -63,15 +85,15 @@ export default function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "relative px-5 py-2 rounded-full text-sm font-medium transition-all duration-300",
+                    "relative px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300",
                     pathname === link.href
-                      ? "text-kabyle-terracotta bg-kabyle-terracotta/10 shadow-sm"
-                      : "text-kabyle-dark hover:text-kabyle-terracotta hover:bg-kabyle-cream/60"
+                      ? "text-kabyle-terracotta bg-kabyle-terracotta/10 shadow-sm shadow-kabyle-terracotta/5"
+                      : "text-kabyle-dark/80 hover:text-kabyle-terracotta hover:bg-kabyle-cream/60"
                   )}
                 >
                   {link.label}
                   {pathname === link.href && (
-                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-kabyle-terracotta rounded-full" />
+                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-gradient-to-r from-kabyle-terracotta to-kabyle-gold rounded-full" />
                   )}
                 </Link>
               ))}
@@ -84,9 +106,12 @@ export default function Navbar() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="relative text-kabyle-dark hover:text-kabyle-terracotta hover:bg-kabyle-cream/50 h-10 w-10 rounded-full transition-all"
+                  className={cn(
+                    "relative text-kabyle-dark hover:text-kabyle-terracotta hover:bg-kabyle-cream/50 rounded-full transition-all duration-300",
+                    scrolled ? "h-9 w-9" : "h-10 w-10"
+                  )}
                 >
-                  <ShoppingBag className="h-5 w-5" />
+                  <ShoppingBag className={cn("transition-all duration-300", scrolled ? "h-4.5 w-4.5" : "h-5 w-5")} />
                   <span className="sr-only">Panier</span>
                 </Button>
               </Link>
@@ -103,7 +128,7 @@ export default function Navbar() {
                     <span className="sr-only">Menu</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-72 pt-12">
+                <SheetContent side="right" className="w-72 pt-12 bg-white">
                   {/* Mobile berber accent */}
                   <div className="berber-border-top mb-6" />
                   <nav className="flex flex-col gap-2">
@@ -113,10 +138,10 @@ export default function Navbar() {
                         href={link.href}
                         onClick={() => setMobileOpen(false)}
                         className={cn(
-                          "px-4 py-3 rounded-lg text-base font-medium transition-all",
+                          "px-4 py-3.5 rounded-xl text-base font-medium transition-all duration-300",
                           pathname === link.href
-                            ? "text-kabyle-terracotta bg-kabyle-terracotta/10 border-l-4 border-kabyle-terracotta"
-                            : "text-kabyle-dark hover:text-kabyle-terracotta hover:bg-kabyle-cream/50 border-l-4 border-transparent"
+                            ? "text-kabyle-terracotta bg-kabyle-terracotta/8 border-l-4 border-kabyle-terracotta"
+                            : "text-kabyle-dark hover:text-kabyle-terracotta hover:bg-kabyle-cream/40 border-l-4 border-transparent"
                         )}
                       >
                         {link.label}
@@ -124,6 +149,22 @@ export default function Navbar() {
                     ))}
                   </nav>
                   <div className="berber-border-bottom mt-6" />
+                  {/* Mobile brand */}
+                  <div className="mt-6 flex items-center gap-3 px-4">
+                    <div className="relative h-10 w-10 overflow-hidden rounded-lg border-2 border-kabyle-terracotta/30">
+                      <Image
+                        src="/logo-kabyle.png"
+                        alt="Robe Kabyle Kenza"
+                        fill
+                        className="object-cover"
+                        sizes="40px"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-sm font-bold text-kabyle-dark">Robe Kabyle</span>
+                      <span className="text-sm font-bold text-kabyle-terracotta ml-1">Kenza</span>
+                    </div>
+                  </div>
                 </SheetContent>
               </Sheet>
             </div>

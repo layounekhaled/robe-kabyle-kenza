@@ -64,20 +64,29 @@ export default async function CatalogPage() {
       <Navbar />
 
       <main className="flex-1">
-        {/* Header */}
-        <div className="bg-kabyle-cream/50 kabyle-pattern border-b">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-kabyle-dark">
+        {/* Header - Enhanced with pattern and decorative elements */}
+        <div className="relative bg-gradient-to-b from-kabyle-cream/60 via-kabyle-cream/30 to-white kabyle-pattern border-b border-kabyle-terracotta/5 overflow-hidden">
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-60 h-60 bg-kabyle-gold/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-40 h-40 bg-kabyle-terracotta/5 rounded-full blur-3xl" />
+
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+            <div className="inline-flex items-center gap-2 text-kabyle-terracotta text-sm font-medium mb-3">
+              <span className="w-8 h-px bg-kabyle-terracotta/40" />
+              COLLECTION
+              <span className="w-8 h-px bg-kabyle-terracotta/40" />
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-kabyle-dark tracking-tight">
               Notre{" "}
-              <span className="text-kabyle-terracotta">Catalogue</span>
+              <span className="text-kabyle-terracotta section-ornament">Catalogue</span>
             </h1>
-            <p className="mt-2 text-muted-foreground">
-              Explorez notre collection complète de robes kabyles
+            <p className="mt-3 text-muted-foreground max-w-lg leading-relaxed">
+              Explorez notre collection complète de robes kabyles, de la pièce traditionnelle au modèle contemporain.
             </p>
           </div>
         </div>
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           <CatalogClient
             initialProducts={serializedProducts}
             initialTotalPages={totalPages}

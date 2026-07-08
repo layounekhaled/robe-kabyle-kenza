@@ -23,6 +23,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import ProductCard from "@/components/store/ProductCard";
+import { cn } from "@/lib/utils";
 
 interface ProductImage {
   id: string;
@@ -395,9 +396,9 @@ export default function CatalogClient({
       <div className="flex gap-6">
         {/* Desktop Sidebar */}
         <aside className="hidden lg:block w-64 shrink-0">
-          <div className="sticky top-20 bg-white rounded-xl border p-5">
+          <div className="sticky top-20 bg-white/95 backdrop-blur-sm rounded-xl border border-kabyle-terracotta/10 shadow-sm p-5">
             <h3 className="text-sm font-bold text-kabyle-dark mb-4 flex items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4" />
+              <SlidersHorizontal className="h-4 w-4 text-kabyle-terracotta" />
               Filtres
             </h3>
             <FilterContent />
@@ -466,7 +467,7 @@ export default function CatalogClient({
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 stagger-children">
                 {products.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
@@ -474,10 +475,11 @@ export default function CatalogClient({
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8">
+                <div className="flex items-center justify-center gap-2 mt-10">
                   <Button
                     variant="outline"
                     size="sm"
+                    className="rounded-lg hover:border-kabyle-terracotta/30 hover:text-kabyle-terracotta transition-colors"
                     disabled={currentPage === 1}
                     onClick={() =>
                       setCurrentPage((p) => Math.max(1, p - 1))
@@ -485,7 +487,7 @@ export default function CatalogClient({
                   >
                     Précédent
                   </Button>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     {Array.from(
                       { length: Math.min(totalPages, 5) },
                       (_, i) => {
@@ -506,11 +508,12 @@ export default function CatalogClient({
                               currentPage === page ? "default" : "outline"
                             }
                             size="sm"
-                            className={
+                            className={cn(
+                              "min-w-[36px] rounded-lg transition-all duration-300",
                               currentPage === page
-                                ? "bg-kabyle-terracotta text-white"
-                                : ""
-                            }
+                                ? "bg-kabyle-terracotta text-white hover:bg-kabyle-red shadow-sm shadow-kabyle-terracotta/20"
+                                : "hover:border-kabyle-terracotta/30 hover:text-kabyle-terracotta"
+                            )}
                             onClick={() => setCurrentPage(page)}
                           >
                             {page}
@@ -522,6 +525,7 @@ export default function CatalogClient({
                   <Button
                     variant="outline"
                     size="sm"
+                    className="rounded-lg hover:border-kabyle-terracotta/30 hover:text-kabyle-terracotta transition-colors"
                     disabled={currentPage === totalPages}
                     onClick={() =>
                       setCurrentPage((p) => Math.min(totalPages, p + 1))

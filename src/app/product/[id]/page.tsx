@@ -12,6 +12,10 @@ import {
   Tag,
   Layers,
   Check,
+  Truck,
+  Shield,
+  RotateCcw,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -119,7 +123,7 @@ export default function ProductDetailPage() {
   );
   const currentStock = selectedVariant?.stock ?? 0;
 
-  // Get available colors for selected size (all colors that exist for this size)
+  // Get available colors for selected size
   const colorsForSize = selectedSize
     ? [...new Set(product?.variants.filter((v) => v.size === selectedSize).map((v) => v.color))] || []
     : colors;
@@ -131,7 +135,7 @@ export default function ProductDetailPage() {
         .map((v) => v.color) || []
     : colors;
 
-  // Get available sizes for selected color (all sizes that exist for this color)
+  // Get available sizes for selected color
   const sizesForColor = selectedColor
     ? [...new Set(product?.variants.filter((v) => v.color === selectedColor).map((v) => v.size))] || []
     : sizes;
@@ -184,6 +188,9 @@ export default function ProductDetailPage() {
         <Navbar />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-4">
+            <div className="inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-kabyle-cream border border-kabyle-terracotta/10">
+              <Package className="h-8 w-8 text-kabyle-terracotta/30" />
+            </div>
             <h2 className="text-2xl font-bold text-kabyle-dark">
               Produit non trouvé
             </h2>
@@ -191,7 +198,7 @@ export default function ProductDetailPage() {
               Ce produit n&apos;existe pas ou n&apos;est plus disponible.
             </p>
             <Link href="/catalog">
-              <Button className="bg-kabyle-terracotta hover:bg-kabyle-red text-white">
+              <Button className="bg-kabyle-terracotta hover:bg-kabyle-red text-white rounded-full">
                 Retour au catalogue
               </Button>
             </Link>
@@ -207,7 +214,7 @@ export default function ProductDetailPage() {
       <Navbar />
 
       <main className="flex-1">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {/* Breadcrumb */}
           <Breadcrumb className="mb-6">
             <BreadcrumbList>
@@ -233,36 +240,42 @@ export default function ProductDetailPage() {
             </BreadcrumbList>
           </Breadcrumb>
 
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-14">
             {/* Image Carousel */}
-            <ImageCarousel
-              images={product.images}
-              productName={product.name}
-            />
+            <div className="animate-fade-in-up">
+              <ImageCarousel
+                images={product.images}
+                productName={product.name}
+              />
+            </div>
 
             {/* Product Info */}
-            <div className="space-y-6">
+            <div className="space-y-6 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
               {/* Reference & Featured */}
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground font-mono">
+                <span className="text-xs text-muted-foreground font-mono tracking-wide">
                   {product.reference}
                 </span>
                 {product.featured && (
-                  <Badge className="bg-kabyle-gold/10 text-kabyle-gold text-xs">
-                    ⭐ Coup de cœur
+                  <Badge className="bg-kabyle-gold/10 text-kabyle-gold text-xs border border-kabyle-gold/20 badge-artisan">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Coup de cœur
                   </Badge>
                 )}
               </div>
 
               {/* Name */}
-              <h1 className="text-2xl sm:text-3xl font-bold text-kabyle-dark">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-kabyle-dark leading-tight">
                 {product.name}
               </h1>
 
               {/* Price */}
-              <p className="text-3xl font-bold text-kabyle-terracotta">
-                {formatPrice(product.price)}
-              </p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-3xl lg:text-4xl font-bold text-kabyle-terracotta tracking-tight">
+                  {formatPrice(product.price)}
+                </p>
+                <span className="text-sm text-muted-foreground">TTC</span>
+              </div>
 
               {/* Description */}
               {product.description && (
@@ -273,8 +286,8 @@ export default function ProductDetailPage() {
 
               {/* Fabric */}
               {product.fabric && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Layers className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-2 text-sm bg-kabyle-cream/40 rounded-lg px-3 py-2 w-fit">
+                  <Layers className="h-4 w-4 text-kabyle-terracotta" />
                   <span className="text-muted-foreground">Tissu :</span>
                   <span className="font-medium text-kabyle-dark">
                     {product.fabric}
@@ -282,12 +295,12 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              <Separator />
+              <Separator className="bg-kabyle-terracotta/5" />
 
               {/* Size Selector */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Tag className="h-4 w-4 text-muted-foreground" />
+                  <Tag className="h-4 w-4 text-kabyle-terracotta" />
                   <span className="text-sm font-semibold text-kabyle-dark">
                     Taille
                   </span>
@@ -307,15 +320,16 @@ export default function ProductDetailPage() {
                         variant={selectedSize === size ? "default" : "outline"}
                         size="sm"
                         className={cn(
-                          "min-w-[48px]",
+                          "min-w-[48px] rounded-lg transition-all duration-300",
                           selectedSize === size &&
-                            "bg-kabyle-terracotta text-white hover:bg-kabyle-red",
+                            "bg-kabyle-terracotta text-white hover:bg-kabyle-red shadow-sm shadow-kabyle-terracotta/20",
+                          selectedSize !== size && isInStock &&
+                            "hover:border-kabyle-terracotta/30 hover:text-kabyle-terracotta",
                           exists && !isInStock &&
-                            "opacity-50"
+                            "opacity-40"
                         )}
                         onClick={() => {
                           setSelectedSize(size);
-                          // If current color not available for this size, switch to first available
                           const colorsForNewSize = product.variants
                             .filter((v) => v.size === size)
                             .map((v) => v.color);
@@ -340,7 +354,7 @@ export default function ProductDetailPage() {
               {/* Color Selector */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-muted-foreground" />
+                  <Package className="h-4 w-4 text-kabyle-terracotta" />
                   <span className="text-sm font-semibold text-kabyle-dark">
                     Couleur
                   </span>
@@ -360,7 +374,6 @@ export default function ProductDetailPage() {
                         onClick={() => {
                           setSelectedColor(color);
                           setQuantity(1);
-                          // If current size not available for this color, switch to first available
                           const sizesForNewColor = product.variants
                             .filter((v) => v.color === color)
                             .map((v) => v.size);
@@ -375,17 +388,17 @@ export default function ProductDetailPage() {
                           }
                         }}
                         className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-lg border-2 text-sm font-medium transition-all cursor-pointer",
+                          "flex items-center gap-2 px-3.5 py-2.5 rounded-xl border-2 text-sm font-medium transition-all duration-300 cursor-pointer",
                           selectedColor === color
-                            ? "border-kabyle-terracotta bg-kabyle-cream"
+                            ? "border-kabyle-terracotta bg-kabyle-terracotta/5 shadow-sm shadow-kabyle-terracotta/10"
                             : isInStock
-                            ? "border-transparent bg-muted hover:bg-kabyle-cream/50"
-                            : "border-transparent bg-muted opacity-50"
+                            ? "border-transparent bg-muted/60 hover:bg-kabyle-cream/50 hover:border-kabyle-terracotta/20"
+                            : "border-transparent bg-muted/60 opacity-40"
                         )}
                       >
                         <span
                           className={cn(
-                            "h-4 w-4 rounded-full",
+                            "h-4 w-4 rounded-full shadow-sm",
                             COLOR_MAP[color] || "bg-gray-400"
                           )}
                         />
@@ -402,7 +415,7 @@ export default function ProductDetailPage() {
 
               {/* Stock Indicator */}
               {selectedSize && selectedColor && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40">
                   <span
                     className={cn(
                       "h-2.5 w-2.5 rounded-full",
@@ -442,19 +455,19 @@ export default function ProductDetailPage() {
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-10 w-10"
+                      className="h-10 w-10 rounded-lg hover:border-kabyle-terracotta/30 transition-colors"
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                       disabled={quantity <= 1}
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
-                    <span className="w-12 text-center text-lg font-semibold">
+                    <span className="w-12 text-center text-lg font-bold text-kabyle-dark">
                       {quantity}
                     </span>
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-10 w-10"
+                      className="h-10 w-10 rounded-lg hover:border-kabyle-terracotta/30 transition-colors"
                       onClick={() =>
                         setQuantity((q) => Math.min(currentStock, q + 1))
                       }
@@ -466,12 +479,12 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              <Separator />
+              <Separator className="bg-kabyle-terracotta/5" />
 
               {/* Order Button */}
               <Button
                 size="lg"
-                className="w-full bg-kabyle-terracotta hover:bg-kabyle-red text-white text-base py-6"
+                className="btn-craft w-full bg-gradient-to-r from-kabyle-terracotta to-kabyle-red hover:from-kabyle-red hover:to-kabyle-terracotta text-white text-base py-6 rounded-xl shadow-lg shadow-kabyle-terracotta/20 hover:shadow-xl hover:shadow-kabyle-terracotta/30 transition-all duration-500"
                 onClick={handleOrder}
                 disabled={currentStock === 0 && !!selectedSize && !!selectedColor}
               >
@@ -483,11 +496,27 @@ export default function ProductDetailPage() {
               {currentStock > 0 && selectedSize && selectedColor && (
                 <p className="text-center text-sm text-muted-foreground">
                   Sous-total :{" "}
-                  <span className="font-bold text-kabyle-terracotta">
+                  <span className="font-bold text-kabyle-terracotta text-base">
                     {formatPrice(product.price * quantity)}
                   </span>
                 </p>
               )}
+
+              {/* Trust signals */}
+              <div className="grid grid-cols-3 gap-3 pt-2">
+                <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-kabyle-cream/30 border border-kabyle-terracotta/5">
+                  <Truck className="h-4 w-4 text-kabyle-terracotta" />
+                  <span className="text-[10px] text-muted-foreground text-center leading-tight">Livraison 58 wilayas</span>
+                </div>
+                <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-kabyle-cream/30 border border-kabyle-gold/5">
+                  <Shield className="h-4 w-4 text-kabyle-gold" />
+                  <span className="text-[10px] text-muted-foreground text-center leading-tight">Qualité garantie</span>
+                </div>
+                <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-kabyle-cream/30 border border-kabyle-olive/5">
+                  <RotateCcw className="h-4 w-4 text-kabyle-olive" />
+                  <span className="text-[10px] text-muted-foreground text-center leading-tight">Échange possible</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
